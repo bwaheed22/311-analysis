@@ -74,5 +74,25 @@ ggtsdisplay(diffhourly)
 ggtsdisplay(diffdaily)
 ggtsdisplay(diffdaily)
 ggtsdisplay(diffdaily)
+
+# fit arima model on daily data based on AICc:
+
+# leave out last observation
+diffdaily_loo <- head(diffdaily,-1)
+fit <- auto.arima(diffdaily_loo)
+
+# store residuals:
+resi <- residuals(fit)
+
+# one-step ahead forecast with 95% confidence interval
+forecast(fit, h = 1, level = 95)
+forecast(fit, h = 10, level = 95)
+
+# examine residuals for ARCH/GARCH modeling:
+ggtsdisplay(resi)
+ggtsdisplay(resi^2)
+
+## arch/garch modeling doesn't seem necessary because residuals appear to be whitenoise, 
+## with mostly insignificant auto correlations at most lags.
                             
 
