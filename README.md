@@ -1,3 +1,10 @@
-Data downloaded from NYC OpenData on 2021-07-11
+# Forecasting 311 calls
 
-https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9
+### Folder structure
+    .
+    ├── analysis          # Analysis scripts
+    │   ├── EDA.R         # Exploratory results
+    │   └── plots         # Generated plots
+    ├── data              # Cleaned data and cleaning scripts
+    ├── inputs            # Raw input data
+    └── README.md
