@@ -1,6 +1,6 @@
 library(dplyr)
 
-# read in data
+# Read in data
 calls_df <- readr::read_csv("data/311_cleaned.csv")
 
 # clean up names
