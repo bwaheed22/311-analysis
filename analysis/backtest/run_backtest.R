@@ -20,8 +20,8 @@ calls_daily_ts <- calls_daily %>%
 # backtest by fitting each model on each agency:complaint_type pair -------
 
 # set cutoff dates for end of the moving window
-cutoff_dates <- seq(from = min(calls_daily$date) + 31, 
-                    to = max(calls_daily$date), 
+cutoff_dates <- seq(from = min(calls_daily$date) + (24 * 30), 
+                    to = max(calls_daily$date) - 31, 
                     length.out = 12)
 # hist(lubridate::day(cutoff_dates))
 
@@ -58,9 +58,14 @@ backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
 plan(sequential)
 
 # pull the best model by averaging metrics over cutoff dates and taking the lowest MAPE
+# throw out outliers first
 best_models <- backtest_forecasts %>% 
+  group_by(agency, complaint_type, .model) %>% 
+  filter(MAPE > quantile(MAPE, 0.01),
+         MAPE < quantile(MAPE, 0.99)) %>% 
+  summarize(MAPE_mean = mean(MAPE, na.rm = TRUE)) %>% 
   group_by(agency, complaint_type) %>% 
-  summarize(best_model = .model[which.min(MAPE)],
+  summarize(best_model = .model[which.min(MAPE_mean)],
             .groups = 'drop')
 # barplot(table(best_models$best_model))
 
