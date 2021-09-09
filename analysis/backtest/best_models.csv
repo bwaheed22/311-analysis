@@ -1,19 +1,19 @@
 agency,complaint_type,best_model
 DCA,consumer complaint,ets
-DEP,air quality,ets
-DEP,lead,ets
-DEP,noise,prophet
+DEP,air quality,prophet
+DEP,lead,prophet
+DEP,noise,ets
 DEP,other,ets
-DEP,sewer,prophet
-DEP,water conservation,prophet
-DEP,water system,prophet
+DEP,sewer,ets
+DEP,water conservation,naive
+DEP,water system,ets
 DHS,homeless person assistance,prophet
 DOB,building/use,arima
 DOB,elevator,ets
 DOB,emergency response team (ert),arima
 DOB,general construction/plumbing,arima
-DOB,other,arima
-DOB,plumbing,drift
+DOB,other,ets
+DOB,plumbing,snaive
 DOB,special projects inspection team (spit),ets
 DOHMH,food establishment,ets
 DOHMH,indoor air quality,ets
@@ -21,15 +21,15 @@ DOHMH,other,ets
 DOT,curb condition,ets
 DOT,other,ets
 DOT,sidewalk condition,prophet
-DOT,street condition,snaive
+DOT,street condition,ets
 DOT,street light condition,ets
-DOT,street sign - damaged,ets
-DOT,street sign - missing,ets
+DOT,street sign - damaged,prophet
+DOT,street sign - missing,prophet
 DOT,traffic signal condition,prophet
-DPR,damaged tree,snaive
+DPR,damaged tree,drift
 DPR,dead/dying tree,ets
 DPR,maintenance or facility,arima
-DPR,new tree request,drift
+DPR,new tree request,prophet
 DPR,other,ets
 DPR,overgrown tree/branches,ets
 DPR,root/sewer/sidewalk condition,ets
@@ -38,39 +38,38 @@ DSNY,derelict vehicles,arima
 DSNY,dirty conditions,ets
 DSNY,graffiti,drift
 DSNY,missed collection (all materials),snaive
-DSNY,other,naive
-DSNY,other enforcement,arima
-DSNY,sanitation condition,drift
+DSNY,other,snaive
+DSNY,other enforcement,drift
+DSNY,sanitation condition,ets
 HPD,appliance,ets
-HPD,door/window,arima
-HPD,electric,ets
+HPD,door/window,ets
+HPD,electric,arima
 HPD,flooring/stairs,ets
-HPD,general,arima
-HPD,heat/hot water,ets
-HPD,other,ets
+HPD,general,ets
+HPD,heat/hot water,naive
+HPD,other,naive
 HPD,paint/plaster,ets
-HPD,plumbing,arima
+HPD,plumbing,ets
 HPD,safety,ets
-HPD,unsanitary condition,ets
+HPD,unsanitary condition,arima
 HPD,water leak,ets
-NYPD,blocked driveway,ets
-NYPD,illegal fireworks,drift
-NYPD,illegal parking,arima
+NYPD,blocked driveway,naive
+NYPD,illegal fireworks,ets
+NYPD,illegal parking,ets
 NYPD,noise - commercial,ets
-NYPD,noise - park,arima
-NYPD,noise - residential,arima
-NYPD,noise - street/sidewalk,arima
-NYPD,noise - vehicle,ets
+NYPD,noise - park,ets
+NYPD,noise - residential,ets
+NYPD,noise - street/sidewalk,ets
+NYPD,noise - vehicle,arima
 NYPD,non-emergency police matter,ets
 NYPD,other,arima
-NYPD,traffic,naive
+NYPD,traffic,ets
 TLC,for hire vehicle complaint,ets
 TLC,other,arima
-TLC,taxi complaint,arima
+TLC,taxi complaint,ets
 DOHMH,rodent,ets
 DOT,broken parking meter,snaive
-NYPD,abandoned vehicle,snaive
-NYPD,animal-abuse,ets
-MAYORâS OFFICE OF SPECIAL ENFORCEMENT,noncompliance with phased reopening,ets
-MAYORâS OFFICE OF SPECIAL ENFORCEMENT,other,snaive
-DHS,other,mean
+NYPD,abandoned vehicle,arima
+NYPD,animal-abuse,arima
+MAYORâS OFFICE OF SPECIAL ENFORCEMENT,other,ets
+DHS,other,arima
