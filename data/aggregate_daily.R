@@ -42,6 +42,12 @@ calls_daily <- calls_daily %>%
   summarise(n = sum(n)) %>% 
   ungroup()
 
+# remove agency:complaint type pairs that do not have at least one call in the last month
+calls_daily <- calls_daily %>% 
+  group_by(agency, complaint_type) %>% 
+  filter(max(date) >= (max(calls_daily$date) - 31)) %>% 
+  ungroup()
+
 # plot time series by agency:complaint type pair
 calls_daily %>% 
   filter(agency == 'NYPD') %>% 

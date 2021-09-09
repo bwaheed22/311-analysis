@@ -1,12 +1,11 @@
 agency,complaint_type,best_model
 DCA,consumer complaint,arima
-DCA,other,prophet
 DEP,air quality,ets
 DEP,lead,mean
 DEP,noise,snaive
 DEP,other,ets
 DEP,sewer,snaive
-DEP,water conservation,naive
+DEP,water conservation,drift
 DEP,water system,ets
 DHS,homeless person assistance,prophet
 DOB,building/use,ets
@@ -16,14 +15,9 @@ DOB,general construction/plumbing,ets
 DOB,other,ets
 DOB,plumbing,snaive
 DOB,special projects inspection team (spit),naive
-DOF,dof property - payment issue,naive
-DOF,dof property - reduction issue,naive
-DOF,other,ets
 DOHMH,food establishment,ets
 DOHMH,indoor air quality,ets
 DOHMH,other,prophet
-DOHMH,rodent,ets
-DOT,broken parking meter,ets
 DOT,curb condition,prophet
 DOT,other,ets
 DOT,sidewalk condition,prophet
@@ -42,15 +36,11 @@ DPR,root/sewer/sidewalk condition,snaive
 DPR,violation of park rules,naive
 DSNY,derelict vehicles,ets
 DSNY,dirty conditions,ets
-DSNY,electronics waste,naive
-DSNY,electronics waste appointment,naive
 DSNY,graffiti,naive
 DSNY,missed collection (all materials),snaive
 DSNY,other,arima
 DSNY,other enforcement,arima
-DSNY,request large bulky item collection,snaive
 DSNY,sanitation condition,arima
-DSNY,snow,naive
 HPD,appliance,ets
 HPD,door/window,ets
 HPD,electric,ets
@@ -63,26 +53,24 @@ HPD,plumbing,ets
 HPD,safety,arima
 HPD,unsanitary condition,ets
 HPD,water leak,snaive
-MAYORâS OFFICE OF SPECIAL ENFORCEMENT,noncompliance with phased reopening,arima
-MAYORâS OFFICE OF SPECIAL ENFORCEMENT,other,naive
-NYPD,abandoned vehicle,naive
-NYPD,animal abuse,prophet
-NYPD,animal-abuse,ets
 NYPD,blocked driveway,snaive
-NYPD,derelict vehicle,ets
-NYPD,homeless encampment,naive
-NYPD,homeless street condition,prophet
 NYPD,illegal fireworks,naive
 NYPD,illegal parking,ets
 NYPD,noise - commercial,ets
 NYPD,noise - park,naive
 NYPD,noise - residential,ets
 NYPD,noise - street/sidewalk,ets
-NYPD,noise - vehicle,naive
+NYPD,noise - vehicle,drift
 NYPD,non-emergency police matter,ets
 NYPD,other,snaive
 NYPD,traffic,prophet
-NYPD,vending,ets
 TLC,for hire vehicle complaint,ets
 TLC,other,naive
 TLC,taxi complaint,snaive
+DOHMH,rodent,ets
+DOT,broken parking meter,drift
+NYPD,abandoned vehicle,drift
+NYPD,animal-abuse,drift
+MAYORâS OFFICE OF SPECIAL ENFORCEMENT,noncompliance with phased reopening,arima
+MAYORâS OFFICE OF SPECIAL ENFORCEMENT,other,naive
+DHS,other,mean
