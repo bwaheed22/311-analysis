@@ -1,0 +1,58 @@
+agency,complaint_type,forecast
+DEP,noise,70.943
+DEP,other,56.106
+DEP,sewer,216.75
+DEP,water system,266.758
+DOB,building/use,40.948
+DOB,elevator,37.017
+DOB,general construction/plumbing,71.584
+DOB,other,41.185
+DOHMH,food establishment,18.887
+DOHMH,rodent,67.853
+DOHMH,other,36.447
+DOT,other,40.923
+DOT,sidewalk condition,30.471
+DOT,street condition,16.134
+DOT,street light condition,46.679
+DOT,traffic signal condition,65.721
+DOT,broken parking meter,11.349
+DPR,damaged tree,-13.235
+DPR,dead/dying tree,5.706
+DPR,maintenance or facility,23.276
+DPR,new tree request,21.986
+DPR,overgrown tree/branches,-4.771
+DPR,root/sewer/sidewalk condition,-0.388
+DPR,other,16.783
+DSNY,derelict vehicles,102.535
+DSNY,dirty conditions,73.863
+DSNY,graffiti,3.103
+DSNY,missed collection (all materials),251.047
+DSNY,other,-7.657
+DSNY,request large bulky item collection,-0
+HPD,appliance,24.703
+HPD,door/window,24.914
+HPD,electric,48.686
+HPD,flooring/stairs,9.772
+HPD,general,37.951
+HPD,other,17.733
+HPD,paint/plaster,43.833
+HPD,plumbing,32.115
+HPD,unsanitary condition,131.734
+HPD,water leak,146.513
+HPD,heat/hot water,74.444
+NYPD,blocked driveway,138.255
+NYPD,illegal parking,212.766
+NYPD,noise - commercial,9.707
+NYPD,noise - residential,944.896
+NYPD,noise - street/sidewalk,893.691
+NYPD,noise - vehicle,92.018
+NYPD,other,47.069
+NYPD,non-emergency police matter,7.191
+NYPD,illegal fireworks,691.296
+NYPD,abandoned vehicle,38.945
+NYPD,homeless street condition,0
+TLC,for hire vehicle complaint,13.947
+TLC,taxi complaint,8.006
+TLC,other,11.715
+MAYORâS OFFICE OF SPECIAL ENFORCEMENT,noncompliance with phased reopening,1.67
+MAYORâS OFFICE OF SPECIAL ENFORCEMENT,other,-0.177
