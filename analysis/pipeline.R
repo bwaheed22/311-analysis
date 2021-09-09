@@ -5,6 +5,7 @@
 
 library(dplyr)
 library(RSocrata)
+library(magrittr)
 source("helper_functions/helper_functions.R")
 
 # Pull yesterday's data:
@@ -15,18 +16,23 @@ query <- paste0("$where=created_date between '",
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
 
-# Clean and aggregate data to daily:
-data_cleaned <- clean_data(yesterday_data)
-data_daily <- aggregate_daily(data_cleaned)
+# Clean data 
+yesterday_data <- clean_data(yesterday_data) #!! need to change column types in order for bind_rows to work
 
-# Read in historical data:
-calls_historical <- readr::read_csv('data/311_cleaned_daily.csv')
+# Read in historical clean data:
+historical_data <- readr::read_csv('data/311_cleaned.csv')
 
 # Append yesterday's data to historical:
-calls_full <- dplyr::bind_rows(calls_historical, yesterday_data)
+calls_full <- dplyr::bind_rows(historical_data, yesterday_data)
+
+# Aggregate data to daily:
+calls_daily <- aggregate_daily(calls_full)
 
 # Backtest and forecast based on optimal models:
 forecasts <- backtest_forecast(calls_full)
+
+
+# Plot: ----
 
 
 

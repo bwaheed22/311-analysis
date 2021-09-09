@@ -16,16 +16,15 @@ clean_data <- function(rawdata) {
   colnames(rawdata) <- janitor::make_clean_names(colnames(rawdata))
   
   # trim columns and filter to last four years
-  datetime_format <- '%m/%d/%Y %I:%M:%S %p'
   data_cleaned <- rawdata %>%
     mutate(
-      created_datetime = lubridate::as_datetime(created_date, format = datetime_format),
-      closed_datatime = lubridate::as_datetime(closed_date, format = datetime_format)
+      created_datetime = lubridate::as_datetime(created_date, tz = "America/New_York"),
+      closed_datetime = lubridate::as_datetime(closed_date, tz = "America/New_York")
     ) %>%
     select(
       unique_key,
       created_datetime,
-      closed_datatime,
+      closed_datetime,
       agency,
       complaint_type,
       descriptor,
