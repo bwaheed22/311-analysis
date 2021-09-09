@@ -1,5 +1,5 @@
 library(dplyr)
-library(tidyverse)
+library(ggplot2)
 
 # Read in data
 calls_df <- readr::read_csv("data/311_cleaned.csv")
@@ -29,21 +29,23 @@ calls_daily <- calls_df %>%
 low_complaints <- calls_daily %>% 
   group_by(agency, complaint_type) %>% 
   summarise(n = sum(n)) %>% 
-  filter(n < 14000) %>% select(-n) %>% 
+  filter(n < 14000) %>% 
+  select(-n) %>% 
   mutate(is_low = TRUE)
 
 # re-label  low complaint types as other, and then aggregate by day:
 calls_daily <- calls_daily %>% 
   left_join(low_complaints, by = c('agency', 'complaint_type')) %>%
-  mutate(is_low = ifelse(is.na(is_low),FALSE,TRUE),
+  mutate(is_low = ifelse(is.na(is_low), FALSE, TRUE), 
          complaint_type = ifelse(is_low == TRUE, 'other', complaint_type)) %>% 
   group_by(date, agency, complaint_type) %>% 
   summarise(n = sum(n)) %>% 
   ungroup()
 
-
-calls_daily %>% filter(agency == 'NYPD')s %>% 
-  ggplot(., aes(x = date, y = n)) +
+# plot time series by agency:complaint type pair
+calls_daily %>% 
+  filter(agency == 'NYPD') %>% 
+  ggplot(aes(x = date, y = n)) +
   facet_wrap(agency~complaint_type, scales = "free") + 
   geom_line() + 
   theme_bw() +
@@ -52,7 +54,6 @@ calls_daily %>% filter(agency == 'NYPD')s %>%
        x = "Date",
        y = "Number of Calls") + 
   scale_y_continuous(labels = scales::comma)
-
 
 # write out
 readr::write_csv(calls_daily, 'data/311_cleaned_daily.csv')
