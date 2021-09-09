@@ -95,17 +95,14 @@ best_model_as_fn <- function(model){
 }
 
 # fit the models to all the data and forecast one week
-fcsts <- calls_daily_ts %>% 
+fcsts <- calls_daily_ts %>%
+  left_join(best_models, by = c('agency', 'complaint_type')) %>% 
   group_by(agency, complaint_type) %>% 
   group_split() %>% 
   purrr::map_dfr(function(tbl_group){
     
-    # pull the best model for this pair
-    best_model_string <- best_models %>% 
-      filter(agency == tbl_group$agency[[1]],
-             complaint_type == tbl_group$complaint_type[[1]]) %>% 
-      pull(best_model)
-    best_model_fn <- best_model_as_fn(best_model_string)
+    # convert the string denoting the best model into a function call
+    best_model_fn <- best_model_as_fn(tbl_group$best_model[[1]])
 
     # fit the model
     fit <- model(tbl_group, model = eval(parse(text = best_model_fn)))
