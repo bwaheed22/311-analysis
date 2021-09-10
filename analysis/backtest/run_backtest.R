@@ -99,8 +99,9 @@ best_model_as_fn <- function(model){
   return(model_fn)
 }
 
-# fit the models to all the data and forecast one week
+# fit the models and predict the latest week
 fcsts <- calls_daily_ts %>%
+  filter(date <= (max(date) - 7)) %>% 
   left_join(best_models, by = c('agency', 'complaint_type')) %>% 
   group_by(agency, complaint_type) %>% 
   group_split() %>% 

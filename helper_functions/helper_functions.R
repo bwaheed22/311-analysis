@@ -38,6 +38,11 @@ clean_data <- function(rawdata) {
     ) %>%
     filter(created_datetime >= max(created_datetime) - lubridate::years(4))
   
+  # trim to only the required columns
+  clean_data <- clean_data %>% 
+    select(created_datetime, agency, complaint_type) %>% 
+    as_tibble()
+  
   return(clean_data)
   
 }
@@ -50,6 +55,7 @@ aggregate_daily <- function(clean_data) {
   clean_data$complaint_type <- stringr::str_to_lower(clean_data$complaint_type)
   
   # select top agencies with > 50,000 calls (~17 calls per day):
+  # TODO: do we want to reset the agency:complaint_type pairs every day or just reuse the originals?
   top_agencies <- clean_data %>% 
     group_by(agency) %>% 
     tally() %>% 
@@ -94,104 +100,29 @@ aggregate_daily <- function(clean_data) {
   
 }
 
-# ----- FUNCTION TO BACKTEST MODELS, SELECT OPTIMAL MODEL, AND CREATE FORECAST : ----------
-
-backtest_forecast <- function(calls_daily) {
-  
-  plan(multisession, workers = 4)
-  
-  # create time series tibble; make NAs explicit and fill with last value
-  calls_daily_ts <- calls_daily %>% 
-    tsibble::as_tsibble(key = c('agency', 'complaint_type'), 
-                        index = 'date') %>% 
-    tsibble::fill_gaps() %>% 
-    tidyr::fill(n, .direction = "down")
-  
-  
-  # backtest by fitting each model on each agency:complaint_type pair -------
-  
-  # set cutoff dates for end of the moving window
-  cutoff_dates <- seq(from = min(calls_daily$date) + (24 * 30), 
-                      to = max(calls_daily$date) - 31, 
-                      length.out = 12)
-  # hist(lubridate::day(cutoff_dates))
-  
-  # run moving window backtest
-  backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
-    
-    # filter data to prior to cutoff date and fit models
-    fit <- calls_daily_ts %>% 
-      filter(date <= cutoff_date) %>%
-      model(
-        mean = MEAN(n),
-        naive = NAIVE(n),
-        snaive = SNAIVE(n),
-        drift = RW(n ~ drift()),
-        ets = ETS(n ~ trend() + season()),
-        arima = ARIMA(n),
-        # nnts = NNETAR(n),
-        prophet = prophet(n ~ growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))
-      )
-    
-    # forecast out one week
-    fc <- fit %>% forecast(h = 7)
-    
-    # calculate accuracy metrics on the forecasts
-    metrics <- accuracy(fc, calls_daily_ts)
-    
-    # add cutoff date to dataframe so it can be used to identified the run
-    metrics$cutoff_date <- cutoff_date
-    
-    return(metrics)
-  })
-  
-  # close the parallel processes
-  plan(sequential)
-  
-  # pull the best model by averaging metrics over cutoff dates and taking the lowest MAPE
-  # throw out outliers first
-  best_models <- backtest_forecasts %>% 
-    group_by(agency, complaint_type, .model) %>% 
-    filter(MAPE > quantile(MAPE, 0.01),
-           MAPE < quantile(MAPE, 0.99)) %>% 
-    summarize(MAPE_mean = mean(MAPE, na.rm = TRUE)) %>% 
-    group_by(agency, complaint_type) %>% 
-    summarize(best_model = .model[which.min(MAPE_mean)],
-              .groups = 'drop')
-  # barplot(table(best_models$best_model))
-  
-  # if any models didn't fit, then add in and use the mean model
-  best_models <- calls_daily %>% 
-    distinct(agency, complaint_type) %>% 
-    left_join(best_models, by = c('agency', 'complaint_type')) %>% 
-    mutate(best_model = if_else(is.na(best_model), 'mean', best_model))
-  
-  # write out the best model per agency:complaint_type pair
-  readr::write_csv(best_models, 'analysis/backtest/best_models.csv')
-  
-  
-  # example workflow to fit the models --------------------------------------
-  
-  # function to return a model based on an input string
-  best_model_as_fn <- function(model){
-    if (!(model %in% c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet'))){
-      stop("model must be one of c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet')")
-    }
-    model_fn <- switch(
-      model,
-      mean = "MEAN(n)",
-      naive = "NAIVE(n)",
-      snaive = "SNAIVE(n)",
-      drift = "RW(n ~ drift())",
-      ets = "ETS(n ~ trend() + season())",
-      arima = "ARIMA(n)",
-      prophet = "prophet(n ~ growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))"
-    )
-    return(model_fn)
+# function to return a model based on an input string
+best_model_as_fn <- function(model){
+  if (!(model %in% c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet'))){
+    stop("model must be one of c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet')")
   }
+  model_fn <- switch(
+    model,
+    mean = "MEAN(n)",
+    naive = "NAIVE(n)",
+    snaive = "SNAIVE(n)",
+    drift = "RW(n ~ drift())",
+    ets = "ETS(n ~ trend() + season())",
+    arima = "ARIMA(n)",
+    prophet = "prophet(n ~ growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))"
+  )
+  return(model_fn)
+}
+
+# fit the models to all the data and forecast one week
+make_forecasts <- function(data, best_models, h = 7){
   
-  # fit the models to all the data and forecast one week
-  fcsts <- calls_daily_ts %>%
+  # make forecasts for each agency:complaint_type pair
+  fcsts <- data %>%
     left_join(best_models, by = c('agency', 'complaint_type')) %>% 
     group_by(agency, complaint_type) %>% 
     group_split() %>% 
@@ -204,7 +135,7 @@ backtest_forecast <- function(calls_daily) {
       fit <- model(tbl_group, model = eval(parse(text = best_model_fn)))
       
       # forecast one week
-      fc <- forecast(fit, h = 7)
+      fc <- forecast(fit, h = h)
       
       return(fc)
     })
