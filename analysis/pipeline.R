@@ -41,9 +41,7 @@ best_models <- readr::read_csv('analysis/backtest/best_models.csv')
 
 # make the forecasts
 forecasts <- make_forecasts(calls_daily, best_models, h = 7)
-forecasts %>% 
-  hilo() %>% 
-  select(date, agency, complaint_type, .mean, ci_80 = `80%`, ci_95 = `95%`)
+
 
 # TODO: we need a way to manage the historical data + daily data (e.g. a running csv)
 
@@ -54,15 +52,21 @@ last_four_weeks <- forecasts %>%
   bind_rows(rename(calls_daily, .mean = n)) %>% 
   filter(date >= (Sys.Date() - 21))
 
+# extract prediction intervals and set lower bound to 0
+last_four_weeks <- last_four_weeks %>% 
+  fabletools::as_fable(response = '.mean', distribution = 'n') %>% 
+  hilo(level = 80) %>%
+  mutate(lower_80 = `80%`$lower,
+         upper_80 = `80%`$upper) %>% 
+  select(-`80%`, -n) %>% 
+  mutate(.mean = if_else(.mean < 0, 0, .mean),
+         lower_80 = if_else(lower_80 < 0, 0, lower_80),
+         upper_80 = if_else(upper_80 < 0, 0, upper_80))
+
 # write out data to be included with shiny app
-# readr::write_csv(last_four_weeks, 'data/forecasts_daily.csv')
+readr::write_csv(last_four_weeks, 'data/forecasts_daily.csv')
 
 # TODO: need a way to deal with yesterday's lack of data: use previous forecast? and then update the following day?
 
 # plot it
-last_four_weeks %>% 
-  fabletools::as_fable(response = '.mean', distribution = 'n') %>% 
-  filter(agency == 'DHS') %>% 
-  autoplot(filter(last_four_weeks, date <= Sys.Date()))
-
-           
+plot_ts(last_four_weeks, .agency = 'TLC', .complaint_type = 'taxi complaint')

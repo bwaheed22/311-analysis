@@ -143,3 +143,33 @@ make_forecasts <- function(data, best_models, h = 7){
   return(fcsts)
 }
 
+
+#' Plot a time-series with prediction interval
+#'
+#' @param .data a dataframe containing columns c('date', 'agency', 'complaint_type', 'n', 'lower_80', 'upper_80')
+#' @param .agency the agency to filter to
+#' @param .complaint_type the complaint type to filter to
+#'
+#' @return a ggplot2 object
+#' @export
+#' 
+#' @import ggplot2
+#'
+#' @examples
+plot_ts <- function(.data, .agency, .complaint_type){
+  
+  .title <- paste0('Daily calls for "', .complaint_type, '" at ', .agency)
+  
+  .data %>% 
+    filter(agency == .agency, complaint_type == .complaint_type) %>% 
+    ggplot(aes(x = date)) +
+    geom_ribbon(aes(ymin = lower_80, ymax = upper_80),
+                         fill = 'grey 80') +
+    geom_line(aes(y = .mean), color = 'grey20') +
+    geom_point(aes(y = .mean), fill = 'grey20') +
+    scale_x_date(date_breaks = '1 week', date_labels = '%b %d') +
+    labs(title = .title,
+         x = NULL,
+         y = 'Count of daily calls')
+}
+
