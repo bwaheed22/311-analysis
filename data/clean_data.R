@@ -10,8 +10,8 @@ colnames(calls_raw) <- janitor::make_clean_names(colnames(calls_raw))
 datetime_format <- '%m/%d/%Y %I:%M:%S %p'
 calls_trimmed <- calls_raw %>% 
   mutate(created_datetime = lubridate::as_datetime(created_date, format = datetime_format),
-         closed_datatime = lubridate::as_datetime(closed_date, format = datetime_format)) %>% 
-  select(unique_key, created_datetime, closed_datatime, agency, complaint_type, 
+         closed_datetime = lubridate::as_datetime(closed_date, format = datetime_format)) %>% 
+  select(unique_key, created_datetime, closed_datetime, agency, complaint_type, 
          descriptor, status, resolution_description, 
          incident_zip, city, borough, latitude, longitude) %>% 
   filter(created_datetime >= max(created_datetime) - lubridate::years(4))
