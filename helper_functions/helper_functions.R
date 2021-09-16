@@ -173,3 +173,34 @@ plot_ts <- function(.data, .agency, .complaint_type){
          y = 'Count of daily calls')
 }
 
+
+#' Check if date is weekend or NYSE holiday
+#'
+#' @param .date a Date object or string coercible to a Date object
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' is_holiday(c(Sys.Date(), Sys.Date()+1))
+is_holiday <- function(.date){
+  date <- timeDate::as.timeDate(.date)
+  is_holiday <- timeDate::isHoliday(date, holidays = timeDate::holidayNYSE(), wday = 1:5)
+  return(is_holiday)
+}
+
+
+# https://www.ncdc.noaa.gov/cdo-web/webservices/v2#gettingStarted
+# https://rdrr.io/cran/ROpenWeatherMap/
+weather_temperature <- function(.date){
+  is_historical <- .date <= Sys.Date()
+  
+}
+weather_precipitation <- function(.date){
+  is_historical <- .date <= Sys.Date()
+  
+}
+weather_wind <- function(.date){
+  is_historical <- .date <= Sys.Date()
+  
+}
