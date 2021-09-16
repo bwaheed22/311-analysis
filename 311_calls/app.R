@@ -1,10 +1,12 @@
+# RShiny App to display daily forecasts of 311 calls for NYC Agencies:
+
 library(shiny)
 library(tidyverse)
 library(plotly)
 
 theme_set(theme_minimal())
 
-# Read in daily forecasts:
+# Read in daily forecasts and best models data frames:
 forecasts_daily <- readr::read_csv('forecasts_daily.csv')
 best_models<- readr::read_csv('best_models.csv')
 
@@ -16,10 +18,11 @@ complaint_types <- unique(forecasts_daily$complaint_type)
 # Define function for plotting:
 plot_ts <- function(.data, .agency, .complaint_type, best_models){
     
-    .title <- paste0('Daily calls for "', .complaint_type, '" at ', .agency)
+    # .title <- paste0('Daily calls for "', .complaint_type, '" at ', .agency)
     .subtitle <- best_models %>% 
         filter(agency == .agency, complaint_type == .complaint_type) %>%
-        pull(best_model) %>% paste0("Modeled using ", .)
+        pull(best_model) %>% paste0("Forecasts calculated using '", ., "' modeling")
+    
     .todays_date <- .data %>% 
         filter(complaint_type == .complaint_type, agency == .agency) %>% 
         na.omit() %>% 
@@ -29,7 +32,7 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         filter(agency == .agency, complaint_type == .complaint_type) %>% 
         ggplot(aes(x = date)) +
         geom_ribbon(aes(ymin = lower_80, ymax = upper_80),
-                    fill = 'grey 80') +
+                    fill = 'grey80') +
         geom_line(aes(y = .mean), color = 'grey20') +
         geom_point(aes(y = .mean), fill = 'grey20') +
         geom_vline(xintercept = as.numeric(.todays_date), linetype = 'dashed', color = 'blue') +
@@ -37,18 +40,23 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         labs(title = NULL,
              caption = .subtitle,
              x = NULL,
-             y = 'Count of daily calls')
+             y = 'Daily Number of Calls')
     
-    plotly::ggplotly(p) %>% config(displayModeBar = F)
+    plotly::ggplotly(p) %>% config(displayModeBar = F) %>% 
+        layout(xaxis = list(fixedrange = TRUE), 
+               yaxis = list(fixedrange = TRUE), font = list(family = "Arial"),
+               annotations = list(x = 1, y = -0.1, text = .subtitle,
+                                  showarrow = F, xref='paper', yref='paper',
+                                  xanchor='right', yanchor='auto', xshift=0, yshift=0))
 }
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Daily and Weekly Forecasts of NYC 311 Calls"),
+    titlePanel("Daily Forecasts of 311 Service Requests for New York City Agencies"),
 
-    # Sidebar with a slider input for number of bins 
+    # Sidebar with input for agency and complaint types:
     sidebarLayout(
         sidebarPanel(
             selectInput("agency",
@@ -59,7 +67,8 @@ ui <- fluidPage(
                         choices = complaint_types)
         ),
 
-        # Show a plot of the generated distribution
+        # Show a plot of the generated distribution with a description of 
+        # the number of forecasted calls:
         mainPanel(
             uiOutput("summary"),
            plotly::plotlyOutput("tsplot")
@@ -67,7 +76,7 @@ ui <- fluidPage(
     )
 )
 
-# Define server logic required to draw a histogram
+# Define functions to plot historical data and future forecasts:
 server <- function(input, output) {
     
     observeEvent(input$agency, {
@@ -99,8 +108,8 @@ server <- function(input, output) {
             summarise(mean = mean(.mean)) %>% 
             pull(mean)
         
-        text_string <- HTML(paste0(scales::comma_format()(one_step_fcst)," calls forecasted for today <br>", 
-                              scales::comma_format()(weekly_avg), " calls on average forecasted daily for the next week"))
+        text_string <- HTML(paste0("<br> Today, ", input$agency, " can expect ", scales::comma_format()(one_step_fcst)," service calls related to '", input$complaint_type, "'. <br> <br>", 
+                              "On average, there will be ", scales::comma_format()(weekly_avg), " service calls daily for ", "'", input$complaint_type,"'"," over the next week. <br> <br>"))
             
         return(text_string)
     })

@@ -36,6 +36,7 @@ calls_daily <- calls_daily %>%
   tsibble::fill_gaps() %>% 
   tidyr::fill(n, .direction = "down")
 
+
 # read in the dataframe denoting the optimal models
 best_models <- readr::read_csv('analysis/backtest/best_models.csv')
 
