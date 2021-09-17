@@ -26,7 +26,8 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
     .todays_date <- .data %>% 
         filter(complaint_type == .complaint_type, agency == .agency) %>% 
         na.omit() %>% 
-        pull(date) %>% min()
+        pull(date) %>% 
+        min()
     
     p <- .data %>% 
         filter(agency == .agency, complaint_type == .complaint_type) %>% 
@@ -39,7 +40,7 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         scale_x_date(date_breaks = '1 week', date_labels = '%b %d') +
         labs(title = NULL,
              caption = .subtitle,
-             x = NULL,
+             x = 'Date',
              y = 'Daily Number of Calls')
     
     plotly::ggplotly(p) %>% config(displayModeBar = F) %>% 
@@ -47,7 +48,8 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
                yaxis = list(fixedrange = TRUE), font = list(family = "Arial"),
                annotations = list(x = 1, y = -0.1, text = .subtitle,
                                   showarrow = F, xref='paper', yref='paper',
-                                  xanchor='right', yanchor='auto', xshift=0, yshift=0))
+                                  xanchor='right', yanchor='auto', xshift=0, yshift=0,
+                                  font = list(size = 12, color = 'red', family = 'Arial')))
 }
 
 # Define UI for application that draws a histogram
@@ -95,6 +97,22 @@ server <- function(input, output) {
     
     output$summary <- renderUI({
         
+        .yest_date <- forecasts_daily %>% 
+            filter(complaint_type == input$complaint_type, agency == input$agency) %>% 
+            na.omit() %>% 
+            pull(date) %>% 
+            min()-1
+        
+        .yest_total_calls <- forecasts_daily %>% 
+            filter(date == .yest_date) %>% 
+            summarize(n = round(sum(.mean),0)) %>% 
+            pull(n)
+        
+        .yest_agency_total_calls <- forecasts_daily %>% 
+            filter(agency == input$agency, date == .yest_date) %>% 
+            summarize(n = round(sum(.mean),0)) %>% 
+            pull(n)
+        
         forecasts_daily <- forecasts_daily %>%
             filter(agency == input$agency, complaint_type == input$complaint_type)
         
@@ -108,8 +126,15 @@ server <- function(input, output) {
             summarise(mean = mean(.mean)) %>% 
             pull(mean)
         
-        text_string <- HTML(paste0("<br> Today, ", input$agency, " can expect ", scales::comma_format()(one_step_fcst)," service calls related to '", input$complaint_type, "'. <br> <br>", 
-                              "On average, there will be ", scales::comma_format()(weekly_avg), " service calls daily for ", "'", input$complaint_type,"'"," over the next week. <br> <br>"))
+        text_string <- HTML(paste0("<br> Yesterday, the City received a total of ", 
+                                   scales::comma_format()(.yest_total_calls)," service calls. <br>",
+                                   input$agency, " received ", scales::comma_format()(.yest_agency_total_calls), 
+                                   " service calls.  <br> <br> Today they can expect ", 
+                                   scales::comma_format()(one_step_fcst)," service calls related to '", 
+                                   input$complaint_type, "'. <br> <br>", 
+                              "On average, there will be ", scales::comma_format()(weekly_avg), 
+                              " service calls daily for ", "'", input$complaint_type,"'",
+                              " over the next week. <br> <br>"))
             
         return(text_string)
     })
