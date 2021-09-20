@@ -32,6 +32,8 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
     
     p <- .data %>% 
         filter(agency == .agency, complaint_type == .complaint_type) %>% 
+        mutate(lower_80 = if_else(is.na(lower_80), .mean, lower_80),
+               upper_80 = if_else(is.na(upper_80), .mean, upper_80)) %>% 
         ggplot(aes(x = date)) +
         geom_ribbon(aes(ymin = lower_80, ymax = upper_80),
                     fill = 'grey80') +
