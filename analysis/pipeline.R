@@ -66,7 +66,7 @@ last_four_weeks <- last_four_weeks %>%
 
 # fix agency name:
 last_four_weeks$agency = gsub("MAYORâ\u0080\u0099S OFFICE OF SPECIAL ENFORCEMENT", 
-                              "MAYOR'S OFFICE OF SPECIAL ENFORCEMENT", last_four_weeks$agency)
+                              "MAYORS OFFICE OF SPECIAL ENFORCEMENT", last_four_weeks$agency)
 
 # write out data to be included with shiny app
 readr::write_csv(last_four_weeks, 'data/forecasts_daily.csv')
