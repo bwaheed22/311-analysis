@@ -1,6 +1,7 @@
 # RShiny App to display daily forecasts of 311 calls for NYC Agencies:
 
 library(shiny)
+library(shinyWidgets)
 library(tidyverse)
 library(plotly)
 
@@ -41,7 +42,8 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         labs(title = NULL,
              caption = .subtitle,
              x = 'Date',
-             y = 'Daily Number of Calls')
+             y = 'Daily Number of Calls') + 
+        lims(y = c(0, NA))
     
     plotly::ggplotly(p) %>% config(displayModeBar = F) %>% 
         layout(xaxis = list(fixedrange = TRUE), 
@@ -64,7 +66,7 @@ ui <- fluidPage(
             selectInput("agency",
                         "Select Agency:",
                         choices = agency_names),
-            selectInput("complaint_type",
+            pickerInput(inputId = "complaint_type",
                         "Select Complaint Type:",
                         choices = complaint_types)
         ),
@@ -79,7 +81,7 @@ ui <- fluidPage(
 )
 
 # Define functions to plot historical data and future forecasts:
-server <- function(input, output) {
+server <- function(input, output, session) {
     
     observeEvent(input$agency, {
         new_complaint_types = forecasts_daily %>% 
@@ -88,7 +90,17 @@ server <- function(input, output) {
             unique() %>% 
             sort()
         
-        updateSelectInput(inputId = "complaint_type", choices = new_complaint_types)
+        disabled_choices <- !complaint_types %in% new_complaint_types
+        # 
+        updatePickerInput(session = session,
+                          inputId = "complaint_type",
+                          choices = complaint_types,
+                          choicesOpt = list(
+                              disabled = disabled_choices,
+                              style = ifelse(disabled_choices,
+                                             yes = "color: rgba(119, 119, 119, 0.5);",
+                                             no = "")))
+        
     })
     
     output$tsplot <- plotly::renderPlotly({
@@ -127,7 +139,7 @@ server <- function(input, output) {
             pull(mean)
         
         text_string <- HTML(paste0("<br> Yesterday, the City received a total of ", 
-                                   scales::comma_format()(.yest_total_calls)," service calls. <br>",
+                                   scales::comma_format()(.yest_total_calls)," service calls and <br>",
                                    input$agency, " received ", scales::comma_format()(.yest_agency_total_calls), 
                                    " service calls.  <br> <br> Today they can expect ", 
                                    scales::comma_format()(one_step_fcst)," service calls related to '", 
