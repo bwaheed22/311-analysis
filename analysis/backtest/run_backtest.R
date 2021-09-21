@@ -4,6 +4,7 @@ library(fable)
 library(fabletools)
 library(fable.prophet)
 library(furrr)
+source('helper_functions/helper_functions.R')
 plan(multisession, workers = 4)
 
 # read in cleaned calls data
@@ -16,6 +17,14 @@ calls_daily_ts <- calls_daily %>%
   tsibble::fill_gaps() %>% 
   tidyr::fill(n, .direction = "down")
   
+# add holidays
+calls_daily_ts$is_holiday <- is_holiday(calls_daily_ts$date)
+
+# add weather
+# calls_daily_ts$temp <- weather_temperature()
+# calls_daily_ts$precip <- weather_precipitation()
+# calls_daily_ts$wind <- weather_wind()
+
 
 # backtest by fitting each model on each agency:complaint_type pair -------
 
@@ -24,6 +33,23 @@ cutoff_dates <- seq(from = min(calls_daily$date) + (24 * 30),
                     to = max(calls_daily$date) - 31, 
                     length.out = 12)
 # hist(lubridate::day(cutoff_dates))
+
+# visualize the cross validation methodology
+# https://otexts.com/fpp3/tscv.html
+# purrr::map_dfr(cutoff_dates, function(end){
+#   tibble(cutoff = which(cutoff_dates == end),
+#          date = seq(min(calls_daily$date), end + 7, by = '1 day')) %>%
+#     mutate(forecast_test_dates = if_else(date > end, 'Test', 'Train'))
+# }) %>%
+#   ggplot(aes(x = date, y = cutoff, color = forecast_test_dates)) +
+#   # geom_tile() +
+#   geom_point() +
+#   scale_y_continuous(breaks = seq_along(cutoff_dates)) +
+#   labs(title = 'Cross-validation methodology',
+#        x = NULL,
+#        y = 'Training/test set',
+#        color = NULL) +
+#   theme(legend.position = 'bottom')
 
 # run moving window backtest
 backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
@@ -37,13 +63,13 @@ backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
       snaive = SNAIVE(n),
       drift = RW(n ~ drift()),
       ets = ETS(n ~ trend() + season()),
-      arima = ARIMA(n),
-      # nnts = NNETAR(n),
-      prophet = prophet(n ~ growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))
+      arima = ARIMA(n ~ is_holiday),
+      # nnts = NNETAR(n ~ is_holiday, lambda = 0),
+      prophet = prophet(n ~ is_holiday + growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))
     )
   
   # forecast out one week
-  fc <- fit %>% forecast(h = 7)
+  fc <- forecast(fit, h = 7)
 
   # calculate accuracy metrics on the forecasts
   metrics <- accuracy(fc, calls_daily_ts)
