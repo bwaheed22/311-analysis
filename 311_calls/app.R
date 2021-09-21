@@ -1,24 +1,33 @@
 # RShiny App to display daily forecasts of 311 calls for NYC Agencies:
 
 library(shiny)
+library(shinyWidgets)
 library(tidyverse)
 library(plotly)
+library(leaflet)
 
 theme_set(theme_minimal())
 
-# Read in daily forecasts and best models data frames:
+# Read in daily forecasts, best models, and yesterday's actuals data frames:
 forecasts_daily <- readr::read_csv('forecasts_daily.csv')
 best_models<- readr::read_csv('best_models.csv')
+yest_data <- readr::read_csv('yesterday_data.csv')
 
 # Get unique agency names and complaint types:
 agency_names <- unique(forecasts_daily$agency)
 complaint_types <- unique(forecasts_daily$complaint_type)
 
+# Define function for base map:
+base_map <- leaflet(yest_data) %>% 
+    addProviderTiles(providers$CartoDB.Voyager,
+                     options = providerTileOptions(noWrap = TRUE)) %>%
+    setView(lng = -73.98928, lat = 40.75042, zoom = 10)
+
 
 # Define function for plotting:
 plot_ts <- function(.data, .agency, .complaint_type, best_models){
     
-    # .title <- paste0('Daily calls for "', .complaint_type, '" at ', .agency)
+    .title <- paste0('Service calls for "', .complaint_type, '" at ', .agency)
     .subtitle <- best_models %>% 
         filter(agency == .agency, complaint_type == .complaint_type) %>%
         pull(best_model) %>% paste0("Forecasts calculated using '", ., "' modeling")
@@ -40,10 +49,11 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         geom_point(aes(y = .mean), fill = 'grey20') +
         geom_vline(xintercept = as.numeric(.todays_date), linetype = 'dashed', color = 'blue') +
         scale_x_date(date_breaks = '1 week', date_labels = '%b %d') +
-        labs(title = NULL,
+        labs(title = .title,
              caption = .subtitle,
              x = 'Date',
-             y = 'Daily Number of Calls')
+             y = 'Daily Number of Calls') + 
+        lims(y = c(0, NA))
     
     plotly::ggplotly(p) %>% config(displayModeBar = F) %>% 
         layout(xaxis = list(fixedrange = TRUE), 
@@ -66,9 +76,10 @@ ui <- fluidPage(
             selectInput("agency",
                         "Select Agency:",
                         choices = agency_names),
-            selectInput("complaint_type",
+            pickerInput(inputId = "complaint_type",
                         "Select Complaint Type:",
-                        choices = complaint_types)
+                        choices = complaint_types),
+            leafletOutput("dailymap", width = "100%", height = "500px")
         ),
 
         # Show a plot of the generated distribution with a description of 
@@ -81,7 +92,7 @@ ui <- fluidPage(
 )
 
 # Define functions to plot historical data and future forecasts:
-server <- function(input, output) {
+server <- function(input, output, session) {
     
     observeEvent(input$agency, {
         new_complaint_types = forecasts_daily %>% 
@@ -90,7 +101,38 @@ server <- function(input, output) {
             unique() %>% 
             sort()
         
-        updateSelectInput(inputId = "complaint_type", choices = new_complaint_types)
+        disabled_choices <- !complaint_types %in% new_complaint_types
+        # 
+        updatePickerInput(session = session,
+                          inputId = "complaint_type",
+                          choices = complaint_types,
+                          choicesOpt = list(
+                              disabled = disabled_choices,
+                              style = ifelse(disabled_choices,
+                                             yes = "color: rgba(119, 119, 119, 0.5);",
+                                             no = "")))
+        
+    })
+    
+    output$dailymap <- renderLeaflet(base_map)
+    
+    observe({
+        yest_data <- yest_data %>% 
+            filter(agency == input$agency, 
+                   complaint_type == input$complaint_type)
+        
+        leafletProxy("dailymap", session) %>%
+            addCircleMarkers(
+                lng = yest_data$longitude,
+                lat = yest_data$latitude,
+                radius = 3, 
+                stroke = FALSE, 
+                fillOpacity = 0.6,
+                popup = paste0(
+                    "<b> Incident Description: </b> <br>", yest_data$descriptor, "<br>",
+                    "<b> Community Board: </b>", as.character(yest_data$community_board), "<br>",
+                    "<b> Date: </b>", as.character(yest_data$created_date)))
+                
     })
     
     output$tsplot <- plotly::renderPlotly({
@@ -106,8 +148,8 @@ server <- function(input, output) {
             min()-1
         
         .yest_total_calls <- forecasts_daily %>% 
-            filter(date == .yest_date) %>% 
-            summarize(n = round(sum(.mean),0)) %>% 
+            filter(date == .yest_date) %>%
+            summarize(n = round(sum(.mean, na.rm = T),0)) %>% 
             pull(n)
         
         .yest_agency_total_calls <- forecasts_daily %>% 
@@ -129,7 +171,7 @@ server <- function(input, output) {
             pull(mean)
         
         text_string <- HTML(paste0("<br> Yesterday, the City received a total of ", 
-                                   scales::comma_format()(.yest_total_calls)," service calls. <br>",
+                                   scales::comma_format()(.yest_total_calls)," service calls and <br>",
                                    input$agency, " received ", scales::comma_format()(.yest_agency_total_calls), 
                                    " service calls.  <br> <br> Today they can expect ", 
                                    scales::comma_format()(one_step_fcst)," service calls related to '", 

@@ -15,6 +15,12 @@ query <- paste0("$where=created_date between '",
                 Sys.Date()-1, "T00:00:00.000'", collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
+yesterday_data$agency <- iconv(yesterday_data$agency, from = "UTF-8", to = "ASCII", sub = "")
+
+# Write-out yesterday's data for mapping in shiny app 
+# (currently day-before-yesterday's data, need to address)
+
+readr::write_csv(yesterday_data, 'data/yesterday_data.csv')
 
 # Clean data 
 yesterday_data <- clean_data(yesterday_data) #!! need to change column types in order for bind_rows to work
@@ -63,6 +69,10 @@ last_four_weeks <- last_four_weeks %>%
   mutate(.mean = if_else(.mean < 0, 0, .mean),
          lower_80 = if_else(lower_80 < 0, 0, lower_80),
          upper_80 = if_else(upper_80 < 0, 0, upper_80))
+
+# fix agency name:
+last_four_weeks$agency = gsub("MAYORâ\u0080\u0099S OFFICE OF SPECIAL ENFORCEMENT", 
+                              "MAYORS OFFICE OF SPECIAL ENFORCEMENT", last_four_weeks$agency)
 
 # write out data to be included with shiny app
 readr::write_csv(last_four_weeks, 'data/forecasts_daily.csv')

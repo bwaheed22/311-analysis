@@ -12,8 +12,9 @@ library(furrr)
 # ----- FUNCTION TO CLEAN RAW DATA: ----------
 
 clean_data <- function(rawdata) {
-  # clean up column names
+  # clean up column names and agency names
   colnames(rawdata) <- janitor::make_clean_names(colnames(rawdata))
+  rawdata$agency <- iconv(rawdata$agency, from = "UTF-8", to = "ASCII", sub = '')
   
   # trim columns and filter to last four years
   clean_data <- rawdata %>%
