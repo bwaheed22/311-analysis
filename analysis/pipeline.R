@@ -15,6 +15,12 @@ query <- paste0("$where=created_date between '",
                 Sys.Date()-1, "T00:00:00.000'", collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
+yesterday_data$agency <- iconv(yesterday_data$agency, from = "UTF-8", to = "ASCII", sub = "")
+
+# Write-out yesterday's data for mapping in shiny app 
+# (currently day-before-yesterday's data, need to address)
+
+readr::write_csv(yesterday_data, 'data/yesterday_data.csv')
 
 # Clean data 
 yesterday_data <- clean_data(yesterday_data) #!! need to change column types in order for bind_rows to work
