@@ -64,9 +64,13 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
                                   font = list(size = 12, color = 'red', family = 'Arial')))
 }
 
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
+    # load custom CSS file
+    includeCSS("www/311.css"),
+    
     # Application title
     titlePanel("Daily Forecasts of 311 Service Requests for New York City Agencies"),
 
@@ -181,6 +185,11 @@ server <- function(input, output, session) {
                               " over the next week. <br> <br>"))
             
         return(text_string)
+    })
+    
+    # shut down R when closing browser
+    session$onSessionEnded(function() {
+        stopApp()
     })
 }
 
