@@ -18,6 +18,7 @@
 get_noaa <- function(.date_start, .date_end){
   
   if (!inherits(as.Date(.date_start), 'Date') | !inherits(as.Date(.date_end), 'Date')) stop('date_start & date_end must be coercible to dates')
+  if (.date_end - .date_start > 365) stop('Date range must be less than a year due to API restrictions')
   
   # construct call to NOAA API
   token <- Sys.getenv('token_noaa')
@@ -59,6 +60,7 @@ get_noaa <- function(.date_start, .date_end){
 #' @references https://openweathermap.org/api/one-call-api
 #'
 #' @examples
+#' #Sys.setenv(token_openweather = '<token>')
 #' get_openweather()
 get_openweather <- function(){
   
@@ -101,7 +103,10 @@ get_openweather <- function(){
 #' @return
 #' @export
 #'
+#' @references https://openweathermap.org/api/one-call-api
+#'
 #' @examples
+#' #Sys.setenv(token_openweather = '<token>')
 #' get_openweather_historical()
 get_openweather_historical <- function(){
   
@@ -148,6 +153,8 @@ get_openweather_historical <- function(){
 #' @export
 #'
 #' @examples
+#' #Sys.setenv(token_noaa = '<token>')
+#' #Sys.setenv(token_openweather = '<token>')
 #' dates <- seq(Sys.Date() - 10, Sys.Date() + 5, by = 'day')
 #' get_weather(.dates = dates)
 get_weather <- function(.dates){
@@ -157,7 +164,7 @@ get_weather <- function(.dates){
   # figure out which dates require which API
   current_date <- Sys.Date()
   dates <- sort(unique(.dates))
-  sources <- case_when(
+  sources <- dplyr::case_when(
     dates >= current_date ~ 'OpenWeather_forecast',
     dates >= (current_date - 5) ~ 'OpenWeather_historical',
     TRUE ~ 'NOAA'
@@ -168,6 +175,7 @@ get_weather <- function(.dates){
   # call the APIs and get the data
   OpenWeather_forecast <- NULL
   OpenWeather_historical <- NULL
+  NOAA <- NULL
   if ('OpenWeather_forecast' %in% sources) OpenWeather_forecast <- get_openweather()
   if ('OpenWeather_historical' %in% sources) OpenWeather_historical <- get_openweather_historical()
   if ('NOAA' %in% sources){
