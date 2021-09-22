@@ -5,8 +5,10 @@ library(shinyWidgets)
 library(tidyverse)
 library(plotly)
 library(leaflet)
+library(ggthemes)
 
-theme_set(theme_bw())
+theme_set(theme_fivethirtyeight(base_size = 10,
+                                base_family = 'arial'))
 
 # Read in daily forecasts, best models, and yesterday's actuals data frames:
 forecasts_daily <- readr::read_csv('forecasts_daily.csv')
@@ -44,7 +46,7 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
                upper_80 = if_else(is.na(upper_80), .mean, upper_80)) %>% 
         ggplot(aes(x = date)) +
         geom_ribbon(aes(ymin = lower_80, ymax = upper_80),
-                    fill = 'grey80') +
+                    fill = 'red', alpha = 0.15) +
         geom_line(aes(y = .mean), color = 'grey20') +
         geom_point(aes(y = .mean), fill = 'grey20') +
         geom_vline(xintercept = as.numeric(.todays_date), linetype = 'dashed', color = 'blue') +
@@ -129,12 +131,15 @@ server <- function(input, output, session) {
                    complaint_type == input$complaint_type)
         
         leafletProxy("dailymap", session) %>%
+            clearMarkerClusters() %>% 
             addCircleMarkers(
-                lng = yest_data$longitude,
-                lat = yest_data$latitude,
-                radius = 3, 
-                stroke = FALSE, 
-                fillOpacity = 0.6,
+                clusterOptions = markerClusterOptions(),
+                lng = jitter(yest_data$longitude, factor = 2),
+                lat = jitter(yest_data$latitude, factor = 2),
+                radius = 3,
+                color = ifelse(is.na(yest_data$closed_date), 'blue', 'red'),
+                stroke = TRUE,
+                fillOpacity = 1,
                 popup = paste0(
                     "<b> Incident Description: </b> <br>", yest_data$descriptor, "<br>",
                     "<b> Community Board: </b>", as.character(yest_data$community_board), "<br>",
