@@ -6,7 +6,7 @@ library(tidyverse)
 library(plotly)
 library(leaflet)
 
-theme_set(theme_minimal())
+theme_set(theme_bw())
 
 # Read in daily forecasts, best models, and yesterday's actuals data frames:
 forecasts_daily <- readr::read_csv('forecasts_daily.csv')
@@ -27,7 +27,7 @@ base_map <- leaflet(yest_data) %>%
 # Define function for plotting:
 plot_ts <- function(.data, .agency, .complaint_type, best_models){
     
-    .title <- paste0('Service calls for "', .complaint_type, '" at ', .agency)
+    .title <- paste0('Historical and Projected Service Calls for "', .complaint_type, '" at ', .agency)
     .subtitle <- best_models %>% 
         filter(agency == .agency, complaint_type == .complaint_type) %>%
         pull(best_model) %>% paste0("Forecasts calculated using '", ., "' modeling")
@@ -58,22 +58,22 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
     plotly::ggplotly(p) %>% config(displayModeBar = F) %>% 
         layout(xaxis = list(fixedrange = TRUE), 
                yaxis = list(fixedrange = TRUE), font = list(family = "Arial"),
-               annotations = list(x = 1, y = -0.1, text = .subtitle,
+               annotations = list(x = 1, y = 1.1, text = .subtitle,
                                   showarrow = F, xref='paper', yref='paper',
                                   xanchor='right', yanchor='auto', xshift=0, yshift=0,
                                   font = list(size = 12, color = 'red', family = 'Arial')))
 }
 
 
-# Define UI for application that draws a histogram
+# Define application UI:
 ui <- fluidPage(
-
+    
     # load custom CSS file
     includeCSS("www/311.css"),
     
     # Application title
     titlePanel("Daily Forecasts of 311 Service Requests for New York City Agencies"),
-
+    
     # Sidebar with input for agency and complaint types:
     sidebarLayout(
         sidebarPanel(
@@ -83,14 +83,17 @@ ui <- fluidPage(
             pickerInput(inputId = "complaint_type",
                         "Select Complaint Type:",
                         choices = complaint_types),
-            leafletOutput("dailymap", width = "100%", height = "500px")
+            
+            # Show map of yesterday's data:
+            leafletOutput("dailymap", width = "100%", height = "500px"),
+            actionButton("reset_button", "Reset View")
         ),
-
+        
         # Show a plot of the generated distribution with a description of 
-        # the number of forecasted calls:
+        # the forecasts:
         mainPanel(
             uiOutput("summary"),
-           plotly::plotlyOutput("tsplot")
+            plotly::plotlyOutput("tsplot")
         )
     )
 )
@@ -135,8 +138,14 @@ server <- function(input, output, session) {
                 popup = paste0(
                     "<b> Incident Description: </b> <br>", yest_data$descriptor, "<br>",
                     "<b> Community Board: </b>", as.character(yest_data$community_board), "<br>",
-                    "<b> Date: </b>", as.character(yest_data$created_date)))
-                
+                    "<b> Date: </b>", as.character(yest_data$created_date), "<br>",
+                    "<b> Incident Address: </b>", as.character(yest_data$incident_address)))
+        
+        input$reset_button
+        
+        leafletProxy("dailymap") %>% 
+            setView(lng = -73.98928, lat = 40.75042, zoom = 10)
+        
     })
     
     output$tsplot <- plotly::renderPlotly({
@@ -174,16 +183,16 @@ server <- function(input, output, session) {
             summarise(mean = mean(.mean)) %>% 
             pull(mean)
         
-        text_string <- HTML(paste0("<br> Yesterday, the City received a total of ", 
-                                   scales::comma_format()(.yest_total_calls)," service calls and <br>",
+        text_string <- HTML(paste0("<br> <ul> <li>Yesterday, the <b> City received a total of ", 
+                                   scales::comma_format()(.yest_total_calls)," service calls </b> and <b>",
                                    input$agency, " received ", scales::comma_format()(.yest_agency_total_calls), 
-                                   " service calls.  <br> <br> Today they can expect ", 
+                                   " service calls. </b> </li> <li> Today, <b>",input$agency," can expect ", 
                                    scales::comma_format()(one_step_fcst)," service calls related to '", 
-                                   input$complaint_type, "'. <br> <br>", 
-                              "On average, there will be ", scales::comma_format()(weekly_avg), 
-                              " service calls daily for ", "'", input$complaint_type,"'",
-                              " over the next week. <br> <br>"))
-            
+                                   input$complaint_type, "'. </b> </li>", 
+                                   "<li> On average, there will be ", scales::comma_format()(weekly_avg), 
+                                   " service calls daily for ", "'", input$complaint_type,"'",
+                                   " over the next week.</li></ul> <br> <br>"))
+        
         return(text_string)
     })
     
