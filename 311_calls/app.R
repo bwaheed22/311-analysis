@@ -52,7 +52,6 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         scale_x_date(date_breaks = '1 day', date_labels = '%b %d') +
         lims(y = c(0, NA)) +
         labs(title = .title,
-             caption = .subtitle,
              x = 'Date',
              y = 'Daily Number of Calls') + 
         theme(axis.text.x = element_text(angle = -40, hjust = 0, size = 7))
@@ -62,10 +61,10 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         config(displayModeBar = F) %>% 
         layout(xaxis = list(fixedrange = TRUE), 
                yaxis = list(fixedrange = TRUE), font = list(family = "Arial"),
-               annotations = list(x = 1, y = 1.1, text = .subtitle,
+               annotations = list(x = 0.002, y = 1.09, text = .subtitle,
                                   showarrow = F, xref='paper', yref='paper',
-                                  xanchor='right', yanchor='auto', xshift=0, yshift=0,
-                                  font = list(size = 12, color = 'red', family = 'Arial')))
+                                  xanchor='left', yanchor='auto', xshift=0, yshift=0,
+                                  font = list(size = 12, color = 'grey', family = 'Arial')))
 }
 
 

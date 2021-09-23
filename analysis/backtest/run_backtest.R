@@ -114,13 +114,19 @@ best_models <- backtest_forecasts %>%
   group_by(agency, complaint_type) %>% 
   summarize(best_model = .model[which.min(RMSE_mean)],
             .groups = 'drop')
-# barplot(table(best_models$best_model))
 
 # if any models didn't fit, then add in and use the mean model
 best_models <- calls_daily %>% 
   distinct(agency, complaint_type) %>% 
   left_join(best_models, by = c('agency', 'complaint_type')) %>% 
   mutate(best_model = if_else(is.na(best_model), 'mean', best_model))
+# ggplot(best_models, aes(x = best_model)) +
+#   geom_bar() +
+#   labs(title = 'Exponential smoothing and ARIMA are by far the most common',
+#        subtitle = 'Frequency of each model',
+#        caption = 'Tests for trends and seasonal components where applicable') +
+#   theme(plot.caption = element_text(face = 'italic', size = 6))
+# ggsave('analysis/plots/best_models.png', width = 7, height = 3.5)
 
 # write out the best model per agency:complaint_type pair
 readr::write_csv(best_models, 'analysis/backtest/best_models.csv')
