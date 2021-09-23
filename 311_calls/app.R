@@ -33,15 +33,14 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
     .subtitle <- best_models %>% 
         filter(agency == .agency, complaint_type == .complaint_type) %>%
         pull(best_model) %>% paste0("Forecasts calculated using '", ., "' modeling")
-    
+    .data <- filter(.data, complaint_type == .complaint_type, agency == .agency)
     .todays_date <- .data %>% 
-        filter(complaint_type == .complaint_type, agency == .agency) %>% 
         na.omit() %>% 
         pull(date) %>% 
         min()
     
+    # construct plot
     p <- .data %>% 
-        filter(agency == .agency, complaint_type == .complaint_type) %>% 
         mutate(lower_80 = if_else(is.na(lower_80), .mean, lower_80),
                upper_80 = if_else(is.na(upper_80), .mean, upper_80)) %>% 
         ggplot(aes(x = date)) +
@@ -50,14 +49,17 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         geom_line(aes(y = .mean), color = 'grey20') +
         geom_point(aes(y = .mean), fill = 'grey20') +
         geom_vline(xintercept = as.numeric(.todays_date), linetype = 'dashed', color = 'blue') +
-        scale_x_date(date_breaks = '1 week', date_labels = '%b %d') +
+        scale_x_date(date_breaks = '1 day', date_labels = '%b %d') +
+        lims(y = c(0, NA)) +
         labs(title = .title,
              caption = .subtitle,
              x = 'Date',
              y = 'Daily Number of Calls') + 
-        lims(y = c(0, NA))
+        theme(axis.text.x = element_text(angle = -40, hjust = 0, size = 7))
     
-    plotly::ggplotly(p) %>% config(displayModeBar = F) %>% 
+    # convert from ggplot to plotly
+    plotly::ggplotly(p) %>% 
+        config(displayModeBar = F) %>% 
         layout(xaxis = list(fixedrange = TRUE), 
                yaxis = list(fixedrange = TRUE), font = list(family = "Arial"),
                annotations = list(x = 1, y = 1.1, text = .subtitle,

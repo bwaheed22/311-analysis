@@ -1,75 +1,75 @@
 agency,complaint_type,best_model
 DCA,consumer complaint,ets
-DEP,air quality,prophet
-DEP,lead,prophet
-DEP,noise,ets
-DEP,other,ets
-DEP,sewer,ets
-DEP,water conservation,naive
-DEP,water system,ets
-DHS,homeless person assistance,prophet
-DOB,building/use,arima
-DOB,elevator,ets
-DOB,emergency response team (ert),arima
-DOB,general construction/plumbing,arima
+DEP,air quality,arima
+DEP,lead,ets
+DEP,noise,prophet
+DEP,other,arima
+DEP,sewer,arima
+DEP,water conservation,arima
+DEP,water system,mean
+DHS,homeless person assistance,ets
+DOB,building/use,ets
+DOB,elevator,prophet
+DOB,emergency response team (ert),ets
+DOB,general construction/plumbing,ets
 DOB,other,ets
-DOB,plumbing,snaive
+DOB,plumbing,ets
 DOB,special projects inspection team (spit),ets
 DOHMH,food establishment,ets
 DOHMH,indoor air quality,ets
-DOHMH,other,ets
-DOT,curb condition,ets
-DOT,other,ets
-DOT,sidewalk condition,prophet
+DOHMH,other,prophet
+DOT,curb condition,arima
+DOT,other,arima
+DOT,sidewalk condition,arima
 DOT,street condition,ets
 DOT,street light condition,ets
 DOT,street sign - damaged,prophet
-DOT,street sign - missing,prophet
-DOT,traffic signal condition,prophet
-DPR,damaged tree,drift
+DOT,street sign - missing,ets
+DOT,traffic signal condition,arima
+DPR,damaged tree,arima
 DPR,dead/dying tree,ets
 DPR,maintenance or facility,arima
 DPR,new tree request,prophet
-DPR,other,ets
+DPR,other,arima
 DPR,overgrown tree/branches,ets
-DPR,root/sewer/sidewalk condition,ets
+DPR,root/sewer/sidewalk condition,arima
 DPR,violation of park rules,arima
 DSNY,derelict vehicles,arima
-DSNY,dirty conditions,ets
-DSNY,graffiti,drift
-DSNY,missed collection (all materials),snaive
+DSNY,dirty conditions,arima
+DSNY,graffiti,ets
+DSNY,missed collection (all materials),ets
 DSNY,other,snaive
-DSNY,other enforcement,drift
+DSNY,other enforcement,ets
 DSNY,sanitation condition,ets
 HPD,appliance,ets
 HPD,door/window,ets
-HPD,electric,arima
+HPD,electric,ets
 HPD,flooring/stairs,ets
 HPD,general,ets
-HPD,heat/hot water,naive
-HPD,other,naive
+HPD,heat/hot water,drift
+HPD,other,ets
 HPD,paint/plaster,ets
 HPD,plumbing,ets
 HPD,safety,ets
-HPD,unsanitary condition,arima
-HPD,water leak,ets
-NYPD,blocked driveway,naive
-NYPD,illegal fireworks,ets
-NYPD,illegal parking,ets
-NYPD,noise - commercial,ets
+HPD,unsanitary condition,ets
+HPD,water leak,arima
+NYPD,blocked driveway,ets
+NYPD,illegal fireworks,naive
+NYPD,illegal parking,arima
+NYPD,noise - commercial,arima
 NYPD,noise - park,ets
 NYPD,noise - residential,ets
-NYPD,noise - street/sidewalk,ets
+NYPD,noise - street/sidewalk,arima
 NYPD,noise - vehicle,arima
 NYPD,non-emergency police matter,ets
 NYPD,other,arima
-NYPD,traffic,ets
-TLC,for hire vehicle complaint,ets
+NYPD,traffic,arima
+TLC,for hire vehicle complaint,arima
 TLC,other,arima
-TLC,taxi complaint,ets
+TLC,taxi complaint,arima
 DOHMH,rodent,ets
-DOT,broken parking meter,snaive
-NYPD,abandoned vehicle,arima
-NYPD,animal-abuse,arima
+DOT,broken parking meter,prophet
+NYPD,abandoned vehicle,ets
+NYPD,animal-abuse,ets
 MAYORâS OFFICE OF SPECIAL ENFORCEMENT,other,ets
 DHS,other,arima

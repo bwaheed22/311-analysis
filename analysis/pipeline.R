@@ -8,11 +8,15 @@ library(RSocrata)
 library(magrittr)
 source("helper_functions/helper_functions.R")
 
+# get today's date
+date_today <- Sys.Date()
+
 # Pull yesterday's data:
 url <-"https://data.cityofnewyork.us/resource/erm2-nwe9.json?"
 query <- paste0("$where=created_date between '", 
-                Sys.Date()-2,"T00:00:00.000' and '", 
-                Sys.Date()-1, "T00:00:00.000'", collapse = "")
+                date_today-2, "T00:00:00.000' and '", 
+                date_today-1, "T00:00:00.000'", 
+                collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
 yesterday_data$agency <- iconv(yesterday_data$agency, from = "UTF-8", to = "ASCII", sub = "")
@@ -42,12 +46,23 @@ calls_daily <- calls_daily %>%
   tsibble::fill_gaps() %>% 
   tidyr::fill(n, .direction = "down")
 
+# add in exogenous variables data
+calls_daily$is_holiday <- is_holiday(calls_daily$date)
+weather <- readr::read_csv('data/weather.csv')
+calls_daily <- left_join(calls_daily, weather, by = 'date')
 
 # read in the dataframe denoting the optimal models
 best_models <- readr::read_csv('analysis/backtest/best_models.csv')
 
 # make the forecasts
-forecasts <- make_forecasts(calls_daily, best_models, h = 7)
+new_data <- calls_daily %>% 
+  distinct(agency, complaint_type) %>% 
+  tidyr::crossing(tibble(date = date_today + 0:6)) %>% 
+  mutate(is_holiday = is_holiday(date)) %>% 
+  left_join(weather, by = 'date') %>% 
+  tsibble::as_tsibble(key = c('agency', 'complaint_type'), 
+                      index = 'date')
+forecasts <- make_forecasts(calls_daily, best_models, new_data = new_data)
 
 
 # TODO: we need a way to manage the historical data + daily data (e.g. a running csv)
@@ -56,7 +71,7 @@ forecasts <- make_forecasts(calls_daily, best_models, h = 7)
 last_four_weeks <- forecasts %>% 
   select(date, agency, complaint_type, .mean, n) %>% 
   tsibble::as_tsibble() %>% 
-  bind_rows(rename(calls_daily, .mean = n)) %>% 
+  bind_rows(select(calls_daily, date, agency, complaint_type, .mean = n)) %>% 
   filter(date >= (Sys.Date() - 21))
 
 # extract prediction intervals and set lower bound to 0
@@ -77,7 +92,9 @@ last_four_weeks$agency = gsub("MAYORâ\u0080\u0099S OFFICE OF SPECIAL ENFORCEMEN
 # write out data to be included with shiny app
 readr::write_csv(last_four_weeks, 'data/forecasts_daily.csv')
 
-# TODO: need a way to deal with yesterday's lack of data: use previous forecast? and then update the following day?
+# TODO: need a way to deal with yesterday's lack of data: 
+# use previous forecast? and then update the following day?
+# interpolate using STL decomposition?
 
 # plot it
 plot_ts(last_four_weeks, .agency = 'TLC', .complaint_type = 'taxi complaint')

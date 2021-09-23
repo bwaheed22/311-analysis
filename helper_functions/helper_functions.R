@@ -6,7 +6,7 @@ library(forecast)
 library(fable)
 library(fabletools)
 library(fable.prophet)
-library(furrr)
+# library(furrr)
 
 
 # ----- FUNCTION TO CLEAN RAW DATA: ----------
@@ -101,7 +101,14 @@ aggregate_daily <- function(clean_data) {
   
 }
 
-# function to return a model based on an input string
+#' Convert a string representing a model into a function call
+#'
+#' @param model one of c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet')
+#'
+#' @return a string to be used with `eval(parse(test = [string]))`
+#' @export
+#'
+#' @examples
 best_model_as_fn <- function(model){
   if (!(model %in% c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet'))){
     stop("model must be one of c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet')")
@@ -113,14 +120,26 @@ best_model_as_fn <- function(model){
     snaive = "SNAIVE(n)",
     drift = "RW(n ~ drift())",
     ets = "ETS(n ~ trend() + season())",
-    arima = "ARIMA(n)",
-    prophet = "prophet(n ~ growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))"
+    arima = "ARIMA(n ~ is_holiday + temperature + precipitation + wind)",
+    prophet = "prophet(n ~ is_holiday + temperature + precipitation + wind + growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))"
   )
   return(model_fn)
 }
 
-# fit the models to all the data and forecast one week
-make_forecasts <- function(data, best_models, h = 7){
+
+#' Forecast using a list of models
+#'
+#' Create forecasts for each agency and complaint type pair using their specific model type. Model is fit to all historical data first.
+#'
+#' @param data a tsibble containing historical data 
+#' @param best_models a dataframe denoting the best models
+#' @param new_data a tsibble containing the forecast dates and exogenous variables
+#'
+#' @return a dataframe of forecasts
+#' @export
+#'
+#' @examples
+make_forecasts <- function(data, best_models, new_data){
   
   # make forecasts for each agency:complaint_type pair
   fcsts <- data %>%
@@ -136,7 +155,7 @@ make_forecasts <- function(data, best_models, h = 7){
       fit <- model(tbl_group, model = eval(parse(text = best_model_fn)))
       
       # forecast one week
-      fc <- forecast(fit, h = h)
+      fc <- forecast(fit, new_data = new_data)
       
       return(fc)
     })
@@ -160,18 +179,18 @@ make_forecasts <- function(data, best_models, h = 7){
 plot_ts <- function(.data, .agency, .complaint_type){
   
   .title <- paste0('Daily calls for "', .complaint_type, '" at ', .agency)
-  
-  .data %>% 
-    filter(agency == .agency, complaint_type == .complaint_type) %>% 
-    ggplot(aes(x = date)) +
+  data <- filter(.data, agency == .agency, complaint_type == .complaint_type)
+    
+  ggplot(data, aes(x = date)) +
     geom_ribbon(aes(ymin = lower_80, ymax = upper_80),
                          fill = 'grey 80') +
     geom_line(aes(y = .mean), color = 'grey20') +
     geom_point(aes(y = .mean), fill = 'grey20') +
-    scale_x_date(date_breaks = '1 week', date_labels = '%b %d') +
+    scale_x_date(date_breaks = '1 day', date_labels = '%b %d') +
     labs(title = .title,
          x = NULL,
-         y = 'Count of daily calls')
+         y = 'Count of daily calls') +
+    theme(axis.text.x = element_text(angle = -40, hjust = 0, size = 6))
 }
 
 

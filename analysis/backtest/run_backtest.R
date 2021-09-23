@@ -16,22 +16,35 @@ calls_daily_ts <- calls_daily %>%
                       index = 'date') %>% 
   tsibble::fill_gaps() %>% 
   tidyr::fill(n, .direction = "down")
-  
+
 # add holidays
 calls_daily_ts$is_holiday <- is_holiday(calls_daily_ts$date)
 
 # add weather
-# calls_daily_ts$temp <- weather_temperature()
-# calls_daily_ts$precip <- weather_precipitation()
-# calls_daily_ts$wind <- weather_wind()
+weather <- readr::read_csv('data/weather.csv')
+calls_daily_ts <- left_join(calls_daily_ts, 
+                            select(weather, date, temperature, precipitation, wind), 
+                            by = 'date')
 
 
 # backtest by fitting each model on each agency:complaint_type pair -------
 
 # set cutoff dates for end of the moving window
-cutoff_dates <- seq(from = min(calls_daily$date) + (24 * 30), 
-                    to = max(calls_daily$date) - 31, 
-                    length.out = 12)
+# only chose dates that have days of forecast for each agency:complaint_type pair
+candidate_dates <- sort(unique(calls_daily_ts$date))
+contains_data <- sapply(candidate_dates, function(cutoff_date){
+  leading_dates <- cutoff_date + 1:7
+  calls_daily_ts %>% 
+    as_tibble() %>% 
+    group_by(agency, complaint_type) %>% 
+    summarize(contains_data = leading_dates %in% date,
+              .groups = 'drop') %>% 
+    summarize(contains_data = all(contains_data))
+})
+candidate_dates <- candidate_dates[unlist(contains_data)] # they're all 2021 dates
+
+# choose 8 evenly spaced dates
+cutoff_dates <- candidate_dates[round(seq(1, length(candidate_dates), length.out = 8))]
 # hist(lubridate::day(cutoff_dates))
 
 # visualize the cross validation methodology
@@ -63,19 +76,30 @@ backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
       snaive = SNAIVE(n),
       drift = RW(n ~ drift()),
       ets = ETS(n ~ trend() + season()),
-      arima = ARIMA(n ~ is_holiday),
-      # nnts = NNETAR(n ~ is_holiday, lambda = 0),
-      prophet = prophet(n ~ is_holiday + growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))
+      arima = ARIMA(n ~ is_holiday + temperature + precipitation + wind),
+      # nnts = NNETAR(n ~ is_holiday + temperature + precipitation + wind, lambda = 0),
+      prophet = prophet(n ~ is_holiday + temperature + precipitation + wind +
+                          growth('linear') +
+                          season('week', type = 'additive') +
+                          season('year', type = 'additive'))
     )
   
-  # forecast out one week
-  fc <- forecast(fit, h = 7)
-
-  # calculate accuracy metrics on the forecasts
-  metrics <- accuracy(fc, calls_daily_ts)
-  
-  # add cutoff date to dataframe so it can be used to identified the run
-  metrics$cutoff_date <- cutoff_date
+  # some dates don't have test data so they fail
+  metrics <- tryCatch({
+    # forecast out one week
+    new_data <- filter(calls_daily_ts, date %in% (cutoff_date + 1:7))
+    fc <- fabletools::forecast(fit, new_data = new_data)
+    
+    # calculate accuracy metrics on the forecasts
+    metrics <- accuracy(fc, calls_daily_ts)
+    
+    # add cutoff date to dataframe so it can be used to identified the run
+    metrics$cutoff_date <- cutoff_date
+    
+    return(metrics)
+  },
+    error = function(e) return(NULL)
+  )
   
   return(metrics)
 })
@@ -83,15 +107,12 @@ backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
 # close the parallel processes
 plan(sequential)
 
-# pull the best model by averaging metrics over cutoff dates and taking the lowest MAPE
-# throw out outliers first
+# pull the best model by averaging metrics over cutoff dates and taking the lowest mean RMSEt
 best_models <- backtest_forecasts %>% 
   group_by(agency, complaint_type, .model) %>% 
-  filter(MAPE > quantile(MAPE, 0.01),
-         MAPE < quantile(MAPE, 0.99)) %>% 
-  summarize(MAPE_mean = mean(MAPE, na.rm = TRUE)) %>% 
+  summarize(RMSE_mean = mean(RMSE, na.rm = TRUE)) %>% 
   group_by(agency, complaint_type) %>% 
-  summarize(best_model = .model[which.min(MAPE_mean)],
+  summarize(best_model = .model[which.min(RMSE_mean)],
             .groups = 'drop')
 # barplot(table(best_models$best_model))
 
@@ -103,49 +124,3 @@ best_models <- calls_daily %>%
 
 # write out the best model per agency:complaint_type pair
 readr::write_csv(best_models, 'analysis/backtest/best_models.csv')
-
-
-# example workflow to fit the models --------------------------------------
-
-# function to return a model based on an input string
-best_model_as_fn <- function(model){
-  if (!(model %in% c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet'))){
-    stop("model must be one of c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet')")
-  }
-  model_fn <- switch(
-    model,
-    mean = "MEAN(n)",
-    naive = "NAIVE(n)",
-    snaive = "SNAIVE(n)",
-    drift = "RW(n ~ drift())",
-    ets = "ETS(n ~ trend() + season())",
-    arima = "ARIMA(n)",
-    prophet = "prophet(n ~ growth('linear') + season('week', type = 'additive') + season('year', type = 'additive'))"
-  )
-  return(model_fn)
-}
-
-# fit the models and predict the latest week
-fcsts <- calls_daily_ts %>%
-  filter(date <= (max(date) - 7)) %>% 
-  left_join(best_models, by = c('agency', 'complaint_type')) %>% 
-  group_by(agency, complaint_type) %>% 
-  group_split() %>% 
-  purrr::map_dfr(function(tbl_group){
-    
-    # convert the string denoting the best model into a function call
-    best_model_fn <- best_model_as_fn(tbl_group$best_model[[1]])
-
-    # fit the model
-    fit <- model(tbl_group, model = eval(parse(text = best_model_fn)))
-    
-    # forecast one week
-    fc <- forecast(fit, h = 7)
-    
-    return(fc)
-  })
-
-# plot the results
-fcsts %>% 
-  filter(agency == 'DOB') %>% 
-  autoplot(tsibble::filter_index(calls_daily_ts, '2021'))

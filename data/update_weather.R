@@ -1,6 +1,6 @@
-setwd('/Users/joemarlo/Dropbox/Data/Projects/311-analysis')
-source('helper_functions/helpers_weather.R')
-source('helper_functions/secrets.R')
+wd <- '~/Dropbox/Data/Projects/311-analysis/'
+source(paste0(wd, 'helper_functions/helpers_weather.R'))
+source(paste0(wd, 'helper_functions/secrets.R'))
 library(dplyr)
 
 # set current date
@@ -22,13 +22,13 @@ date_current <- Sys.Date()
 # weather <- purrr::map_dfr(dates_cut, get_weather)
 # 
 # # write out
-# readr::write_csv(weather, 'data/weather.csv')
+# readr::write_csv(weather, paste0(wd, 'data/weather.csv'))
 
 
 # daily update ------------------------------------------------------------
 
 # get previous weather data
-weather_previous <- readr::read_csv("data/weather.csv")
+weather_previous <- readr::read_csv(paste0(wd, "data/weather.csv"))
 
 # get current weather data
 dates_new <- seq(date_current - 10, date_current + 7, by = '1 day')
@@ -52,4 +52,4 @@ wind_ts <- forecast::na.interp(wind_ts)
 weather_new$wind <- wind_ts
 
 # write out
-readr::write_csv(weather_new, 'data/weather.csv')
+readr::write_csv(weather_new, paste0(wd, 'data/weather.csv'))
