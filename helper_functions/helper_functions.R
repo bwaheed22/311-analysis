@@ -45,7 +45,7 @@ clean_data <- function(rawdata) {
     as_tibble()
   
   # clean up complaint_type names:
-  calls_df$complaint_type <- stringr::str_to_lower(calls_df$complaint_type)
+  clean_data$complaint_type <- stringr::str_to_lower(clean_data$complaint_type)
   
   return(clean_data)
   
