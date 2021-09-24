@@ -98,7 +98,10 @@ ui <- fluidPage(
         # the forecasts:
         mainPanel(
             uiOutput("summary"),
-            plotly::plotlyOutput("tsplot")
+            tabsetPanel(type = "tabs",
+                        tabPanel("Forecast Plot", plotly::plotlyOutput("tsplot")),
+                        tabPanel("Yesterday Data", DT:::dataTableOutput("table")),
+                        tabPanel("Weather Map"))
         )
     )
 )
@@ -159,6 +162,11 @@ server <- function(input, output, session) {
     output$tsplot <- plotly::renderPlotly({
         plot_ts(forecasts_daily, input$agency, input$complaint_type, best_models)
     })
+    
+    output$table <- renderDataTable(yest_data,
+                                    options = list(
+                                        pageLength = 5
+                                    ))
     
     output$summary <- renderUI({
         
