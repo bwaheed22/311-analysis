@@ -10,12 +10,12 @@ date_current <- Sys.Date()
 # instantiate weather data ------------------------------------------------
 
 # # get all the dates
-# dates_historical <- calls_daily <- readr::read_csv('data/311_cleaned_daily.csv')
+# dates_historical <- readr::read_csv('data/311_cleaned_daily.csv')
 # dates_historical <- seq(min(dates_historical$date), date_current, by = '1 day')
 # 
 # # split up dates due to API restrictions
-# dates_cut <- split(dates_historical, 
-#                    paste0(lubridate::year(dates_historical), 
+# dates_cut <- split(dates_historical,
+#                    paste0(lubridate::year(dates_historical),
 #                           ceiling(lubridate::month(dates_historical) / 6) * 6))
 # 
 # # get the weather data
@@ -36,8 +36,8 @@ weather_current <- get_weather(dates_new)
 
 # overwrite old data with latest data
 weather_new <- weather_previous %>% 
-  bind_rows(weather_current) %>% 
-  arrange(date, source) %>% 
+  bind_rows(weather_current) %>%
+  arrange(date, source, desc(is_forecast)) %>% 
   group_by(date) %>% 
   filter(row_number() == last(row_number())) %>% 
   ungroup() 

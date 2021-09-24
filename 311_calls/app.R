@@ -89,7 +89,9 @@ ui <- fluidPage(
             
             # Show map of yesterday's data:
             leafletOutput("dailymap", width = "100%", height = "500px"),
-            actionButton("reset_button", "Reset View")
+            br(),
+            actionButton("reset_button", "Reset View"),
+            HTML('<br><br>Data updated daily')
         ),
         
         # Show a plot of the generated distribution with a description of 
@@ -202,7 +204,7 @@ server <- function(input, output, session) {
         return(text_string)
     })
     
-    # shut down R when closing browser
+    # shut down R after closing browser
     session$onSessionEnded(function() {
         stopApp()
     })

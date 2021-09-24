@@ -13,12 +13,15 @@
 #' @references https://www.ncdc.noaa.gov/cdo-web/webservices/v2
 #'
 #' @examples
-#' #Sys.setenv(token_noaa = '<token>')
+#' Sys.setenv(token_noaa = '<token>')
 #' get_noaa('2021-09-10', '2021-09-22')
 get_noaa <- function(.date_start, .date_end){
   
+  .date_start <- as.Date(.date_start)
+  .date_end <- as.Date(.date_end)
+  
   if (!inherits(as.Date(.date_start), 'Date') | !inherits(as.Date(.date_end), 'Date')) stop('date_start & date_end must be coercible to dates')
-  if (.date_end - .date_start > 365) stop('Date range must be less than a year due to API restrictions')
+  if ((.date_end - .date_start) > 365) stop('Date range must be less than a year due to API restrictions')
   
   # construct call to NOAA API
   token <- Sys.getenv('token_noaa')

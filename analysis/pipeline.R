@@ -15,7 +15,7 @@ date_today <- Sys.Date()
 url <-"https://data.cityofnewyork.us/resource/erm2-nwe9.json?"
 query <- paste0("$where=created_date between '", 
                 date_today-2, "T00:00:00.000' and '", 
-                date_today-1, "T00:00:00.000'", 
+                date_today, "T00:00:00.000'", 
                 collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
@@ -36,6 +36,7 @@ historical_data <- readr::read_csv('data/311_cleaned.csv') %>%
   select(created_datetime, agency, complaint_type)
 
 # Append yesterday's data to historical:
+# TODO: we seem to be double counting some data and yesterday's data is underestimated due to reporting lag
 calls_full <- dplyr::bind_rows(historical_data, yesterday_data)
 
 # Aggregate data to daily:
