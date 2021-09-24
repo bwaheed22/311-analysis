@@ -44,6 +44,9 @@ clean_data <- function(rawdata) {
     select(created_datetime, agency, complaint_type) %>% 
     as_tibble()
   
+  # clean up complaint_type names:
+  calls_df$complaint_type <- stringr::str_to_lower(calls_df$complaint_type)
+  
   return(clean_data)
   
 }

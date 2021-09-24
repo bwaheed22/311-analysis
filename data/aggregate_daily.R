@@ -4,8 +4,6 @@ library(ggplot2)
 # Read in data
 calls_df <- readr::read_csv("data/311_cleaned.csv")
 
-# clean up names
-calls_df$complaint_type <- stringr::str_to_lower(calls_df$complaint_type)
 
 # select top agencies with > 50,000 calls (~17 calls per day)
 top_agencies <- calls_df %>% 
