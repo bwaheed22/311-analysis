@@ -13,7 +13,8 @@ theme_set(theme_fivethirtyeight(base_size = 10,
 # Read in daily forecasts, best models, and yesterday's actuals data frames:
 forecasts_daily <- readr::read_csv('forecasts_daily.csv')
 best_models<- readr::read_csv('best_models.csv')
-yest_data <- readr::read_csv('yesterday_data.csv')
+yest_data <- readr::read_csv('yesterday_data.csv') %>% 
+    mutate(complaint_type = tolower(complaint_type))
 
 # Get unique agency names and complaint types:
 agency_names <- unique(forecasts_daily$agency)
@@ -57,14 +58,17 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
         theme(axis.text.x = element_text(angle = -40, hjust = 0, size = 7))
     
     # convert from ggplot to plotly
-    plotly::ggplotly(p) %>% 
+    p <- plotly::ggplotly(p) %>% 
         config(displayModeBar = F) %>% 
         layout(xaxis = list(fixedrange = TRUE), 
-               yaxis = list(fixedrange = TRUE), font = list(family = "Arial"),
+               yaxis = list(fixedrange = TRUE), 
+               font = list(family = "Arial"),
                annotations = list(x = 0.002, y = 1.09, text = .subtitle,
                                   showarrow = F, xref='paper', yref='paper',
                                   xanchor='left', yanchor='auto', xshift=0, yshift=0,
                                   font = list(size = 12, color = 'grey', family = 'Arial')))
+    
+    return(p)
 }
 
 
@@ -100,7 +104,7 @@ ui <- fluidPage(
             uiOutput("summary"),
             tabsetPanel(type = "tabs",
                         tabPanel("Forecast Plot", plotly::plotlyOutput("tsplot")),
-                        tabPanel("Yesterday Data", DT:::dataTableOutput("table")),
+                        tabPanel("Yesterday Data", DT::dataTableOutput("table")),
                         tabPanel("Weather Map"))
         )
     )
@@ -163,10 +167,14 @@ server <- function(input, output, session) {
         plot_ts(forecasts_daily, input$agency, input$complaint_type, best_models)
     })
     
-    output$table <- renderDataTable(yest_data,
-                                    options = list(
-                                        pageLength = 5
-                                    ))
+    output$table <- DT::renderDataTable(yest_data,
+                                        rownames = FALSE,
+                                        options = list(
+                                            pageLength = 5, # sets n observations shown
+                                            lengthChange = FALSE, #  removes option to change n observations shown
+                                            sDom  = '<"top">lrt<"bottom">ip',  # removes the search bar
+                                            scrollX = TRUE # enable side scroll so table doesn't overflow
+                                        ))
     
     output$summary <- renderUI({
         
