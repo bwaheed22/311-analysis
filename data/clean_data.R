@@ -3,6 +3,11 @@ library(dplyr)
 # read in the raw data -- 15gb
 calls_raw <- readr::read_csv('inputs/311_Service_Requests_from_2010_to_Present.csv')
 
+# write-out last 5 days of raw data for checking duplicates in pipeline:
+last_five_days <- calls_raw %>% 
+  filter(created_date >= max(created_date) - lubridate::days(5))
+readr::write_csv(last_five_days, 'data/last_five_days_raw.csv')
+
 # clean up column names
 colnames(calls_raw) <- janitor::make_clean_names(colnames(calls_raw))
 

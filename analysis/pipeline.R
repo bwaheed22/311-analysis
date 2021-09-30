@@ -19,12 +19,23 @@ query <- paste0("$where=created_date between '",
                 collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
-yesterday_data$agency <- iconv(yesterday_data$agency, from = "UTF-8", to = "ASCII", sub = "")
+yesterday_data$complaint_type <- stringr::str_to_lower(yesterday_data$complaint_type)
 
-# Write-out yesterday's data for mapping in shiny app (currently 2 days prior):
+# Write-out yesterday's data for mapping in shiny app:
 readr::write_csv(yesterday_data, 'data/yesterday_data.csv')
 
-# Clean data 
+# Check against last 5-days of raw data for any duplicate records and
+# maintain a csv of last 5-days of raw data:
+last_five_days <- readr::read_csv('data/last_five_days_raw.csv')
+duplicate_records = plyr::match_df(yesterday_data, last_five_days) # returns the rows in yest_data that are in last_five days
+yesterday_data <- yesterday_data %>% anti_join(duplicate_records)
+last_five_days <- dplyr::bind_rows(last_five_days, yesterday_data)
+last_five_days <- last_five_days %>% filter(created_date >= max(created_date) - lubridate::days(5))
+
+readr::write_csv(last_five_days, 'data/last_five_days_raw.csv')
+
+# Clean data:
+yesterday_data$agency <- iconv(yesterday_data$agency, from = "UTF-8", to = "ASCII", sub = "")
 yesterday_data <- clean_data(yesterday_data)
 
 # Aggregate data:
@@ -34,9 +45,10 @@ yesterday_data <- aggregate_daily(yesterday_data)
 historical_data <- readr::read_csv('data/311_cleaned_daily.csv')
 
 # Append yesterday's data to historical:
-
-# TODO: we seem to be double counting some data and yesterday's data is underestimated due to reporting lag
 calls_daily <- dplyr::bind_rows(historical_data, yesterday_data)
+
+# TODO: write this appended aggregated data-frame to csv:
+readr::write_csv(calls_daily, 'data/311_cleaned_daily_appended.csv')
 
 
 # Create time series object:
