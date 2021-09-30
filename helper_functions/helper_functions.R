@@ -36,8 +36,7 @@ clean_data <- function(rawdata) {
       borough,
       latitude,
       longitude
-    ) %>%
-    filter(created_datetime >= max(created_datetime) - lubridate::years(4))
+    )
   
   # trim to only the required columns
   clean_data <- clean_data %>% 
@@ -55,44 +54,19 @@ clean_data <- function(rawdata) {
 
 aggregate_daily <- function(clean_data) {
   
-  # clean up names:
-  clean_data$complaint_type <- stringr::str_to_lower(clean_data$complaint_type)
+  agencies_cmplts <- readr::read_csv("data/selected_agencies_complaints.csv")
   
-  # select top agencies with > 50,000 calls (~17 calls per day):
-  # TODO: do we want to reset the agency:complaint_type pairs every day or just reuse the originals?
-  top_agencies <- clean_data %>% 
-    group_by(agency) %>% 
-    tally() %>% 
-    arrange(desc(n)) %>%
-    filter(n > 50000) %>% 
-    pull(agency)
-  
-  # aggregate to daily based on compliant_type:
+  # aggregate to daily based on selected agencies and compliant_types:
   calls_daily <- clean_data %>% 
-    filter(agency %in% top_agencies) %>% 
-    mutate(date = lubridate::date(created_datetime)) %>% 
+    filter(agency %in% agencies_cmplts$agency) %>% 
+    mutate(complaint_type = ifelse(complaint_type %in% agencies_cmplts$complaint_type, complaint_type, 'other'),
+           date = lubridate::date(created_datetime)) %>% 
     select(date, agency, complaint_type) %>% 
     group_by(date, agency, complaint_type) %>% 
     tally() %>% 
     arrange(agency, desc(n)) %>% 
     ungroup()
   
-  # look at low frequency complaint types within each agency:
-  low_complaints <- calls_daily %>% 
-    group_by(agency, complaint_type) %>% 
-    summarise(n = sum(n)) %>% 
-    filter(n < 14000) %>% 
-    select(-n) %>% 
-    mutate(is_low = TRUE)
-  
-  # re-label  low complaint types as other, and then aggregate by day:
-  calls_daily <- calls_daily %>% 
-    left_join(low_complaints, by = c('agency', 'complaint_type')) %>%
-    mutate(is_low = ifelse(is.na(is_low), FALSE, TRUE), 
-           complaint_type = ifelse(is_low == TRUE, 'other', complaint_type)) %>% 
-    group_by(date, agency, complaint_type) %>% 
-    summarise(n = sum(n)) %>% 
-    ungroup()
   
   # remove agency:complaint type pairs that do not have at least one call in the last month
   calls_daily <- calls_daily %>% 

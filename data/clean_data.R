@@ -16,5 +16,9 @@ calls_trimmed <- calls_raw %>%
          incident_zip, city, borough, latitude, longitude) %>% 
   filter(created_datetime >= max(created_datetime) - lubridate::years(4))
 
+
+calls_raw$agency <- iconv(calls_raw$agency, from = "UTF-8", to = "ASCII", sub = '')
+calls_raw$complaint_type <- stringr::str_to_lower(calls_raw$complaint_type)
+
 # write out
 readr::write_csv(calls_trimmed, 'data/311_cleaned.csv')

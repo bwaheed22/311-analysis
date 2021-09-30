@@ -1,9 +1,11 @@
 library(dplyr)
 library(ggplot2)
 
+# This script should be run *once* - when we choose to start running the app:
+# We feed it the base, cleaned data that we downloaded from the OpenData website:
+
 # Read in data
 calls_df <- readr::read_csv("data/311_cleaned.csv")
-
 
 # select top agencies with > 50,000 calls (~17 calls per day)
 top_agencies <- calls_df %>% 
@@ -46,18 +48,29 @@ calls_daily <- calls_daily %>%
   filter(max(date) >= (max(calls_daily$date) - 31)) %>% 
   ungroup()
 
-# plot time series by agency:complaint type pair
-calls_daily %>% 
-  filter(agency == 'NYPD') %>% 
-  ggplot(aes(x = date, y = n)) +
-  facet_wrap(agency~complaint_type, scales = "free") + 
-  geom_line() + 
-  theme_bw() +
-  labs(title = "NYPD Calls by Type",
-       subtitle = "July 10, 2017 - July 10, 2021",
-       x = "Date",
-       y = "Number of Calls") + 
-  scale_y_continuous(labels = scales::comma)
+# Write-out list of selected complaint types and agencies:
+selected_agencies_complaints <- calls_daily %>% 
+  group_by(agency, complaint_type) %>% 
+  tally() %>% 
+  ungroup() %>%
+  select(agency, complaint_type) %>% 
+  data.frame() %>% mutate(complaint_type = stringr::str_to_lower(complaint_type))
+
+
+readr::write_csv(selected_agencies_complaints, 'data/selected_agencies_complaints.csv')
+
+# # plot time series by agency:complaint type pair
+# calls_daily %>% 
+#   filter(agency == 'NYPD') %>% 
+#   ggplot(aes(x = date, y = n)) +
+#   facet_wrap(agency~complaint_type, scales = "free") + 
+#   geom_line() + 
+#   theme_bw() +
+#   labs(title = "NYPD Calls by Type",
+#        subtitle = "July 10, 2017 - July 10, 2021",
+#        x = "Date",
+#        y = "Number of Calls") + 
+#   scale_y_continuous(labels = scales::comma)
 
 # write out
 readr::write_csv(calls_daily, 'data/311_cleaned_daily.csv')

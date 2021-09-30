@@ -14,33 +14,32 @@ date_today <- Sys.Date()
 # Pull yesterday's data:
 url <-"https://data.cityofnewyork.us/resource/erm2-nwe9.json?"
 query <- paste0("$where=created_date between '", 
-                date_today-2, "T00:00:00.000' and '", 
+                date_today-3, "T00:00:00.000' and '", 
                 date_today, "T00:00:00.000'", 
                 collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
 yesterday_data$agency <- iconv(yesterday_data$agency, from = "UTF-8", to = "ASCII", sub = "")
 
-# Write-out yesterday's data for mapping in shiny app 
-# (currently day-before-yesterday's data, need to address)
-
+# Write-out yesterday's data for mapping in shiny app (currently 2 days prior):
 readr::write_csv(yesterday_data, 'data/yesterday_data.csv')
 
 # Clean data 
-yesterday_data <- clean_data(yesterday_data) #!! need to change column types in order for bind_rows to work
+yesterday_data <- clean_data(yesterday_data)
 
-# Read in historical clean data:
-# TODO: do we want to read all the data or just the aggregated data?
-#   all the data will be slow especially if we move this to a raspberry pi
-historical_data <- readr::read_csv('data/311_cleaned.csv') %>% 
-  select(created_datetime, agency, complaint_type)
+# Aggregate data:
+yesterday_data <- aggregate_daily(yesterday_data)
+
+# Read in historical aggregated data:
+historical_data <- readr::read_csv('data/311_cleaned_daily.csv')
 
 # Append yesterday's data to historical:
-# TODO: we seem to be double counting some data and yesterday's data is underestimated due to reporting lag
-calls_full <- dplyr::bind_rows(historical_data, yesterday_data)
 
-# Aggregate data to daily:
-calls_daily <- aggregate_daily(calls_full)
+# TODO: we seem to be double counting some data and yesterday's data is underestimated due to reporting lag
+calls_daily <- dplyr::bind_rows(historical_data, yesterday_data)
+
+
+# Create time series object:
 calls_daily <- calls_daily %>% 
   tsibble::as_tsibble(key = c('agency', 'complaint_type'), 
                       index = 'date') %>% 
@@ -86,10 +85,6 @@ last_four_weeks <- last_four_weeks %>%
          lower_80 = if_else(lower_80 < 0, 0, lower_80),
          upper_80 = if_else(upper_80 < 0, 0, upper_80))
 
-# fix agency name:
-last_four_weeks$agency = gsub("MAYORâ\u0080\u0099S OFFICE OF SPECIAL ENFORCEMENT", 
-                              "MAYORS OFFICE OF SPECIAL ENFORCEMENT", 
-                              last_four_weeks$agency)
 
 # write out data to be included with shiny app
 readr::write_csv(last_four_weeks, 'data/forecasts_daily.csv')
