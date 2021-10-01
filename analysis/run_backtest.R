@@ -132,4 +132,4 @@ best_models <- calls_daily %>%
 # ggsave('analysis/plots/best_models.png', width = 7, height = 3.5)
 
 # write out the best model per agency:complaint_type pair
-readr::write_csv(best_models, 'analysis/backtest/best_models.csv')
+readr::write_csv(best_models, '311_calls/data/best_models.csv')
