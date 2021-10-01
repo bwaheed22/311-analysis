@@ -30,7 +30,8 @@ last_five_days <- readr::read_csv('data/last_five_days_raw.csv')
 yest_distinct_records <- subset(yesterday_data,
                                 !(yesterday_data$unique_key %in% last_five_days$unique_key))
 last_five_days <- dplyr::bind_rows(last_five_days, yest_distinct_records)
-last_five_days <- last_five_days %>% 
+last_five_days <- last_five_days %>%
+  select(created_date, unique_key) %>% 
   filter(created_date >= max(created_date) - lubridate::days(5))
 
 readr::write_csv(last_five_days, 'data/last_five_days_raw.csv')
