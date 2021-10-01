@@ -120,8 +120,11 @@ best_models <- calls_daily %>%
   distinct(agency, complaint_type) %>% 
   left_join(best_models, by = c('agency', 'complaint_type')) %>% 
   mutate(best_model = if_else(is.na(best_model), 'mean', best_model))
-# ggplot(best_models, aes(x = best_model)) +
-#   geom_bar() +
+# best_models %>% 
+#   group_by(best_model) %>% 
+#   tally() %>% 
+#   ggplot(aes(x = reorder(best_model, -n), y = n)) +
+#   geom_col() +
 #   labs(title = 'Exponential smoothing and ARIMA are by far the most common',
 #        subtitle = 'Frequency of each model',
 #        caption = 'Tests for trends and seasonal components where applicable') +
