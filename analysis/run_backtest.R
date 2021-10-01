@@ -123,6 +123,8 @@ best_models <- calls_daily %>%
 # best_models %>%
 #   group_by(best_model) %>%
 #   tally() %>%
+#   full_join(tibble(best_model = c('mean', 'naive', 'snaive', 'drift', 'ets', 'arima', 'prophet')),
+#             by = 'best_model') %>% 
 #   ggplot(aes(x = reorder(best_model, -n), y = n)) +
 #   geom_col() +
 #   labs(title = 'Exponential smoothing and ARIMA are by far the most common',

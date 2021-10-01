@@ -2,7 +2,7 @@ library(dplyr)
 library(ggplot2)
 
 # This script should be run *once* - when we choose to start running the app:
-# We feed it the base, cleaned data that we downloaded from the OpenData website:
+# We feed it the base, cleaned data outputt'ed from clean_data.R
 
 # Read in data
 calls_df <- readr::read_csv("data/311_cleaned.csv")
@@ -57,8 +57,6 @@ calls_daily %>%
   tally() %>% 
   ungroup() %>%
   select(agency, complaint_type) %>% 
-  data.frame() %>% 
-  mutate(complaint_type = stringr::str_to_lower(complaint_type)) %>% 
   readr::write_csv('data/selected_agencies_complaints.csv')
 
 # # plot time series by agency:complaint type pair

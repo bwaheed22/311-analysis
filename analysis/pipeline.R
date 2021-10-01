@@ -85,18 +85,10 @@ new_data <- calls_daily %>%
                       index = 'date')
 forecasts <- make_forecasts(calls_daily, best_models, new_data = new_data)
 
-
-# TODO: we need a way to manage the historical data + daily data (e.g. a running csv)
-
+# extract prediction intervals and set lower bound to 0 and
 # combine historical last 3 weeks with one week forecast
 last_four_weeks <- forecasts %>% 
   select(date, agency, complaint_type, .mean, n) %>% 
-  tsibble::as_tsibble() %>% 
-  bind_rows(select(calls_daily, date, agency, complaint_type, .mean = n)) %>% 
-  filter(date >= (Sys.Date() - 21))
-
-# extract prediction intervals and set lower bound to 0
-last_four_weeks <- last_four_weeks %>% 
   fabletools::as_fable(response = '.mean', distribution = 'n') %>% 
   hilo(level = 80) %>%
   mutate(lower_80 = `80%`$lower,
@@ -104,15 +96,13 @@ last_four_weeks <- last_four_weeks %>%
   select(-`80%`, -n) %>% 
   mutate(.mean = if_else(.mean < 0, 0, .mean),
          lower_80 = if_else(lower_80 < 0, 0, lower_80),
-         upper_80 = if_else(upper_80 < 0, 0, upper_80))
+         upper_80 = if_else(upper_80 < 0, 0, upper_80)) %>% 
+  tsibble::as_tibble() %>% 
+  bind_rows(select(calls_daily, date, agency, complaint_type, .mean = n)) %>% 
+  filter(date >= (Sys.Date() - 21)) %>% 
+  arrange(date, agency, complaint_type)
 
+# TODO: make sure there are no duplicates
 
 # write out data to be included with shiny app
 readr::write_csv(last_four_weeks, '311_calls/data/forecasts_daily.csv')
-
-# TODO: need a way to deal with yesterday's lack of data: 
-# use previous forecast? and then update the following day?
-# interpolate using STL decomposition?
-
-# plot it
-plot_ts(last_four_weeks, .agency = 'TLC', .complaint_type = 'taxi complaint')
