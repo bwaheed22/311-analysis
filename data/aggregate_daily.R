@@ -48,16 +48,18 @@ calls_daily <- calls_daily %>%
   filter(max(date) >= (max(calls_daily$date) - 31)) %>% 
   ungroup()
 
+# write out aggregated data frame
+readr::write_csv(calls_daily, 'data/311_cleaned_daily.csv')
+
 # Write-out list of selected complaint types and agencies:
-selected_agencies_complaints <- calls_daily %>% 
+calls_daily %>% 
   group_by(agency, complaint_type) %>% 
   tally() %>% 
   ungroup() %>%
   select(agency, complaint_type) %>% 
-  data.frame() %>% mutate(complaint_type = stringr::str_to_lower(complaint_type))
-
-
-readr::write_csv(selected_agencies_complaints, 'data/selected_agencies_complaints.csv')
+  data.frame() %>% 
+  mutate(complaint_type = stringr::str_to_lower(complaint_type)) %>% 
+  readr::write_csv('data/selected_agencies_complaints.csv')
 
 # # plot time series by agency:complaint type pair
 # calls_daily %>% 
@@ -72,5 +74,4 @@ readr::write_csv(selected_agencies_complaints, 'data/selected_agencies_complaint
 #        y = "Number of Calls") + 
 #   scale_y_continuous(labels = scales::comma)
 
-# write out
-readr::write_csv(calls_daily, 'data/311_cleaned_daily.csv')
+

@@ -107,7 +107,7 @@ backtest_forecasts <- future_map_dfr(cutoff_dates, function(cutoff_date){
 # close the parallel processes
 plan(sequential)
 
-# pull the best model by averaging metrics over cutoff dates and taking the lowest mean RMSEt
+# pull the best model by averaging metrics over cutoff dates and taking the lowest mean RMSE
 best_models <- backtest_forecasts %>% 
   group_by(agency, complaint_type, .model) %>% 
   summarize(RMSE_mean = mean(RMSE, na.rm = TRUE)) %>% 
@@ -120,9 +120,9 @@ best_models <- calls_daily %>%
   distinct(agency, complaint_type) %>% 
   left_join(best_models, by = c('agency', 'complaint_type')) %>% 
   mutate(best_model = if_else(is.na(best_model), 'mean', best_model))
-# best_models %>% 
-#   group_by(best_model) %>% 
-#   tally() %>% 
+# best_models %>%
+#   group_by(best_model) %>%
+#   tally() %>%
 #   ggplot(aes(x = reorder(best_model, -n), y = n)) +
 #   geom_col() +
 #   labs(title = 'Exponential smoothing and ARIMA are by far the most common',
