@@ -19,7 +19,8 @@ query <- paste0("$where=created_date between '",
                 collapse = "")
 
 yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
-yesterday_data$complaint_type <- stringr::str_to_lower(yesterday_data$complaint_type)
+yesterday_data <- yesterday_data %>% mutate(complaint_type = stringr::str_to_lower(complaint_type),
+                                            unique_key = as.numeric(unique_key))
 
 # Write-out yesterday's data for mapping in shiny app:
 readr::write_csv(yesterday_data, '311_calls/data/yesterday_data.csv')
