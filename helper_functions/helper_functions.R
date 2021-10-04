@@ -57,10 +57,10 @@ aggregate_daily <- function(clean_data) {
   agencies_cmplts <- readr::read_csv("data/selected_agencies_complaints.csv")
   
   # aggregate to daily based on selected agencies and compliant_types:
-  calls_daily <- clean_data %>% 
-    filter(agency %in% agencies_cmplts$agency) %>% 
+  calls_daily <- clean_data %>%
     mutate(complaint_type = ifelse(complaint_type %in% agencies_cmplts$complaint_type, complaint_type, 'other'),
-           date = lubridate::date(created_datetime)) %>% 
+           date = lubridate::date(created_datetime))
+    filter(agency %in% agencies_cmplts$agency, complaint_type %in% agencies_cmplts$complaint_type) %>% 
     select(date, agency, complaint_type) %>% 
     group_by(date, agency, complaint_type) %>% 
     tally() %>% 
