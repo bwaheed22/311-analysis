@@ -34,7 +34,7 @@ Run the scripts in the following order:
 1) `data/clean_data.R`
 2) `data/aggregated_daily.R`
 3) `data/update_weather.R`
-4) `analysis/backtest/run_backtest.R`
+4) `analysis/run_backtest.R`
 5) `analysis/pipeline.R`
 
 Original data comes from [NYC Data](https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9). Weather data requires tokens from [NOAA API](https://www.ncdc.noaa.gov/cdo-web/webservices/v2) and [OpenWeather API](https://openweathermap.org/api/one-call-api). For daily updates, `update_weather.R` and `pipeline.R` should be set up as cron jobs.

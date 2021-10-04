@@ -1,7 +1,7 @@
 wd <- '~/Dropbox/Data/Projects/311-analysis/'
 library(dplyr)
 library(simpleweather)
-source(paste0(wd, 'helper_functions/secrets.R'))
+# source(paste0(wd, 'helper_functions/secrets.R'))
 
 # set current date
 date_current <- Sys.Date()
