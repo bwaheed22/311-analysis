@@ -1,7 +1,6 @@
-wd <- '~/Dropbox/Data/Projects/311-analysis/'
+wd <- '/Users/mbp/Documents/Side-Projects/311_analysis/'
 library(dplyr)
 library(simpleweather)
-source(paste0(wd, 'helper_functions/secrets.R'))
 
 # set current date
 date_current <- Sys.Date()
@@ -40,14 +39,30 @@ weather_new <- weather_previous %>%
   filter(row_number() == last(row_number())) %>% 
   ungroup() 
 
-# handle missing wind data by STL interpolation
+# handle missing data by STL interpolation
 # not that best method but ¯\_(ツ)_/¯
 # skimr::skim(weather_new)
+
+# wind
 wind_ts <- ts(weather_new$wind, 
-           start = weather_new$date[1],
-           frequency = 365)
+              start = weather_new$date[1],
+              frequency = 365)
 wind_ts <- forecast::na.interp(wind_ts)
 weather_new$wind <- wind_ts
+
+# temperature
+temp_ts <- ts(weather_new$temperature,
+              start = weather_new$date[1],
+              frequency = 365)
+temp_ts <- forecast::na.interp(temp_ts)
+weather_new$temperature <- temp_ts
+
+# replace precip with random draw based on historical probabilities
+precip_NAs <- is.na(weather_new$precipitation)
+historical_prob <- mean(weather_new$precipitation, na.rm = T)
+weather_new$precipitation[precip_NAs] <- rbinom(sum(precip_NAs), 
+                                                size = 1, 
+                                                prob = historical_prob)
 
 # write out
 readr::write_csv(weather_new, paste0(wd, 'data/weather.csv'))
