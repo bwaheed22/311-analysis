@@ -65,11 +65,16 @@ clean_data <- function(rawdata) {
 #' 
 aggregate_daily <- function(clean_data) {
   
+  # read in selected agencies and complaints
+  agencies_cmplts <- readr::read_csv("data/selected_agencies_complaints.csv")
+  
   clean_data <- clean_data %>% 
     mutate(date = lubridate::date(created_datetime)) %>% 
     select(-created_datetime)
   
-  agencies_cmplts <- readr::read_csv("data/selected_agencies_complaints.csv")
+  # exclude agencies that aren't in selected list:
+  clean_data <- clean_data %>% 
+    filter(agency %in% agencies_cmplts$agency)
   
   # Check if these selected agencies/complaint type pairs have data in the last month:
   agencies_cmplts <- clean_data %>% 
