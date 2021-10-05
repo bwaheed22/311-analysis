@@ -12,7 +12,7 @@ theme_set(theme_fivethirtyeight(base_size = 10,
 forecasts_daily <- readr::read_csv('data/forecasts_daily.csv', col_types = list(lower_80=col_double(),
                                                                                 upper_80=col_double()))
 best_models<- readr::read_csv('data/best_models.csv')
-yest_data <- readr::read_csv('data/yesterday_data.csv') %>% 
+yest_data <- readr::read_csv('data/yesterday_map_data.csv') %>% 
   mutate(complaint_type = tolower(complaint_type))
 
 # Get unique agency names and complaint types:

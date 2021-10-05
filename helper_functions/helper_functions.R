@@ -50,6 +50,51 @@ clean_data <- function(rawdata) {
   
 }
 
+# ----FUNCTION TO CLEAN YESTERDAY DATA FOR MAPPING IN DASHBOARD ---------
+
+clean_yest_data <- function(rawdata) {
+  
+  # read in selected agency-complaint pairs:
+  agencies_cmplts <- readr::read_csv("data/selected_agencies_complaints.csv")
+  
+  # clean up column names and agency names
+  colnames(rawdata) <- janitor::make_clean_names(colnames(rawdata))
+  rawdata$agency <- iconv(rawdata$agency, from = "UTF-8", to = "ASCII", sub = '')
+  
+  # trim columns and filter to last four years
+  clean_yest_data <- rawdata %>%
+    mutate(
+      created_date = lubridate::as_datetime(created_date, tz = "America/New_York"),
+      closed_date = lubridate::as_datetime(closed_date, tz = "America/New_York")
+    ) %>%
+    select(
+      unique_key,
+      created_date,
+      closed_date,
+      agency,
+      complaint_type,
+      descriptor,
+      status,
+      resolution_description,
+      incident_zip,
+      city,
+      borough,
+      latitude,
+      longitude
+    )
+  
+  # clean up complaint_type names:
+  clean_yest_data$complaint_type <- stringr::str_to_lower(clean_yest_data$complaint_type)
+  
+  clean_yest_data <- clean_yest_data %>% 
+    filter(agency %in% agencies_cmplts$agency) %>% 
+    mutate(complaint_type = ifelse(complaint_type %in% agencies_cmplts$complaint_type, complaint_type, 'other'))
+  
+  return(clean_yest_data)
+  
+}
+
+
 # ----- FUNCTION TO AGGREGATE DATA TO DAILY: ----------
 
 #' Aggregate raw calls into daily data

@@ -22,8 +22,9 @@ yesterday_data <- RSocrata::read.socrata(paste0(url, query, collapse = ""))
 yesterday_data <- yesterday_data %>% mutate(complaint_type = stringr::str_to_lower(complaint_type),
                                             unique_key = as.numeric(unique_key))
 
-# Write-out yesterday's data for mapping in shiny app:
-readr::write_csv(yesterday_data, '311_calls/data/yesterday_data.csv')
+# Clean up yesterday's data for mapping in shiny app and write-out (includes lat/long/descriptors):
+yesterday_map_data <- clean_yest_data(yesterday_data)
+readr::write_csv(yesterday_map_data, '311_calls/data/yesterday_map_data.csv')
 
 # Check against last 5-days of raw data for any duplicate records and
 # maintain a csv of last 5-days of raw data:
