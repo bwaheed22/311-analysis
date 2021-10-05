@@ -59,7 +59,7 @@ readr::write_csv(calls_daily, 'data/311_cleaned_daily.csv')
 
 # Remove last 2 days to forecast prior data since it is not completely available:
 calls_daily <- calls_daily %>% 
-  filter(date <= (date_today-2))
+  filter(date < (date_today-2))
 
 # Create time series object:
 calls_daily <- calls_daily %>% 
@@ -79,7 +79,7 @@ best_models <- readr::read_csv('311_calls/data/best_models.csv')
 # make the forecasts
 new_data <- calls_daily %>% 
   distinct(agency, complaint_type) %>% 
-  tidyr::crossing(tibble(date = (date_today-2)+ 0:6)) %>% 
+  tidyr::crossing(tibble(date = (date_today-2)+ 0:8)) %>% 
   mutate(is_holiday = is_holiday(date)) %>% 
   left_join(weather, by = 'date') %>% 
   tsibble::as_tsibble(key = c('agency', 'complaint_type'), 

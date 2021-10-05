@@ -52,27 +52,51 @@ clean_data <- function(rawdata) {
 
 # ----- FUNCTION TO AGGREGATE DATA TO DAILY: ----------
 
+#' Aggregate raw calls into daily data
+#' 
+#' 
+#'
+#' @param clean_data 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
 aggregate_daily <- function(clean_data) {
+  
+  clean_data <- clean_data %>% 
+    mutate(date = lubridate::date(created_datetime)) %>% 
+    select(-created_datetime)
   
   agencies_cmplts <- readr::read_csv("data/selected_agencies_complaints.csv")
   
-  # aggregate to daily based on selected agencies and compliant_types:
-  calls_daily <- clean_data %>%
-    mutate(complaint_type = ifelse(complaint_type %in% agencies_cmplts$complaint_type, complaint_type, 'other'),
-           date = lubridate::date(created_datetime))
-    filter(agency %in% agencies_cmplts$agency, complaint_type %in% agencies_cmplts$complaint_type) %>% 
-    select(date, agency, complaint_type) %>% 
+  # Check if these selected agencies/complaint type pairs have data in the last month:
+  agencies_cmplts <- clean_data %>% 
+    inner_join(agencies_cmplts, by = c('agency', 'complaint_type')) %>% 
+    group_by(date, agency, complaint_type) %>% 
+    tally() %>%
+    group_by(agency, complaint_type) %>% 
+    filter(max(date) >= (max(clean_data$date) - 31)) %>% 
+    ungroup() %>% 
+    distinct(agency, complaint_type)
+  
+  # Replace those that are not in the above list as other:
+  others <- clean_data %>% 
+    anti_join(agencies_cmplts, by = c('agency', 'complaint_type')) %>%
+    mutate(complaint_type = 'other') %>% 
     group_by(date, agency, complaint_type) %>% 
     tally() %>% 
-    arrange(agency, desc(n)) %>% 
     ungroup()
   
-  
-  # remove agency:complaint type pairs that do not have at least one call in the last month
-  calls_daily <- calls_daily %>% 
-    group_by(agency, complaint_type) %>% 
-    filter(max(date) >= (max(calls_daily$date) - 31)) %>% 
+  not_other <- clean_data %>% 
+    inner_join(agencies_cmplts, by = c('agency', 'complaint_type')) %>% 
+    group_by(date, agency, complaint_type) %>% 
+    tally() %>% 
     ungroup()
+  
+  calls_daily <- dplyr::bind_rows(others, not_other) %>% 
+    arrange(date, agency, desc(n))
   
   return(calls_daily)
   

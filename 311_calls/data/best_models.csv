@@ -11,7 +11,7 @@ DHS,homeless person assistance,arima
 DOB,building/use,arima
 DOB,elevator,arima
 DOB,emergency response team (ert),arima
-DOB,general construction/plumbing,arima
+DOB,general construction/plumbing,ets
 DOB,other,ets
 DOB,plumbing,ets
 DOB,special projects inspection team (spit),ets
@@ -42,7 +42,7 @@ DSNY,other,drift
 DSNY,other enforcement,ets
 DSNY,sanitation condition,ets
 HPD,appliance,arima
-HPD,door/window,ets
+HPD,door/window,arima
 HPD,electric,arima
 HPD,flooring/stairs,ets
 HPD,general,ets
@@ -63,8 +63,8 @@ NYPD,noise - vehicle,arima
 NYPD,non-emergency police matter,ets
 NYPD,other,arima
 NYPD,traffic,arima
-TLC,for hire vehicle complaint,ets
-TLC,other,arima
+TLC,for hire vehicle complaint,arima
+TLC,other,ets
 TLC,taxi complaint,arima
 DOHMH,rodent,arima
 NYPD,illegal fireworks,arima

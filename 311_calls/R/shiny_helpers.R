@@ -21,7 +21,7 @@ plot_ts <- function(.data, .agency, .complaint_type, best_models){
                 fill = 'red', alpha = 0.15) +
     geom_line(aes(y = .mean), color = 'grey20') +
     geom_point(aes(y = .mean, text = paste0('Daily calls: ', round(.mean))), fill = 'grey20') +
-    geom_vline(xintercept = as.numeric(.todays_date), linetype = 'dashed', color = 'grey50') +
+    geom_vline(xintercept = as.numeric(Sys.Date()), linetype = 'dashed', color = 'grey50') +
     scale_x_date(date_breaks = '1 day', date_labels = '%b %d') +
     lims(y = c(0, NA)) +
     labs(title = .title,
