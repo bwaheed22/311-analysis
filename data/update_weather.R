@@ -1,6 +1,10 @@
 wd <- '/Users/mbp/Documents/Side-Projects/311_analysis/'
 library(dplyr)
 library(simpleweather)
+<<<<<<< HEAD
+=======
+# source(paste0(wd, 'helper_functions/secrets.R'))
+>>>>>>> e5a199fc9b415601d78e6c98250e86a8a3cf4a0b
 
 # set current date
 date_current <- Sys.Date()
